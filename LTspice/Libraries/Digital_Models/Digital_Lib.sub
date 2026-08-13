@@ -1,0 +1,26 @@
+* /Users/atorralba/Documents/LTspice/Circuits/D_Latch_Symb.asc
+.SUBCKT D_LATCH E D Q QN
++ params: vhigh=1 vlow = 0 ref = 0.5 td = 10p tau=2p
+A1 0 N001 0 E 0 0 N002 0 AND vhigh=1 vlow=0 ref=0.5 td=10p tau=2p
+A2 0 E 0 D 0 0 N003 0 AND vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A3 0 Q 0 N003 0 QN 0 0 OR vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A4 0 N002 0 QN 0 Q 0 0 OR vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A5 D 0 0 0 0 N001 0 0 BUF vhigh={vhigh} vlow={vlow} ref={ref} td=0.1 tau=0
+.ENDS D_LATCH
+
+.SUBCKT D_FF D CLK Q QN
+A6 D 0 CLK 0 0 QN Q 0 DFLOP vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+.ENDS D_FF
+
+.SUBCKT MUX_21_CMOS A B S O ON
+A1 0 A 0 S 0 0 N001 0 AND vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A2 0 N003 0 B 0 0 N002 0 AND vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A5 S 0 0 0 0 N003 0 0 BUF vhigh={vhigh} vlow={vlow} ref={ref} td=0.1 tau=0
+A3 0 N001 0 N002 0 ON O 0 OR vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+.ENDS MUX_21_CMOS
+
+.SUBCKT DEMUX_12 AB S A B
+A1 0 AB 0 S 0 0 A 0 AND vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A2 0 N001 0 AB 0 0 B 0 AND vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+A5 S 0 0 0 0 N001 0 0 BUF vhigh={vhigh} vlow={vlow} ref={ref} td={td} tau={tau}
+.ENDS DEMUX_12

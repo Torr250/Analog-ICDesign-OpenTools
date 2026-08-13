@@ -1,0 +1,45 @@
+*Razavi Fundamentals Microelectronics CMOS Models
+*Technology CMOS 180nm 
+
+.MODEL nch NMOS LEVEL = 1
++kp=100u vto=0.4 
++gamma=0.4 lambda=0.1
++phi=0.3 tox=40e-10
++cgso = 9.548e-10 cgdo = 9.548e-10
++cj=9.81e-4 cjsw=1.19e-10
++mjsw=0 mj=0
+
+.MODEL pch PMOS LEVEL = 1
++kp=50u vto=-0.4 
++gamma=0.4 lambda=0.1
++phi=0.3 tox=40e-10
++cgso = 9.548e-10 cgdo = 9.548e-10
++cj=9.81e-4 cjsw=1.19e-10
++mjsw=0 mj=0
+
+.subckt xnch D G S B
+ 
+.param l=0.18u w=2u m=1
+.param wd = 0.48e-6
+.param ad = 'w*wd'
+.param as = 'w*wd'
+.param ps = '2*w+2*wd'
+.param pd = '2*w+2*wd'
+
+ 
+M1 D G S B nch l=l w=w ad=ad as=as pd=pd ps=ps m=m
+.ends
+
+
+.subckt xpch D G S B
+ 
+.param l=0.18u w=2u m=1
+.param wd = 0.48e-6
+.param ad = 'w*wd'
+.param as = 'w*wd'
+.param ps = '2*w+2*wd'
+.param pd = '2*w+2*wd'
+
+ 
+M1 D G S B pch l=l w=w ad=ad as=as pd=pd ps=ps m=m
+.ends

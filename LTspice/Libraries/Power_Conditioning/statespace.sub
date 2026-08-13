@@ -1,0 +1,173 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+* - State-space matrices of the 1st, 2nd and 3rd orders, SISO, with the general
+* approach implementation to allow for all the terms to be used, not only the
+* particular cases of canonical forms. All of them are made with G-sources and
+* capacitors so they will simulate very-fast.
+*
+*   Vlad, ©2008 - today
+*
+********************************************************************************
+*
+*
+* [GENERAL]
+*
+* - They're divided into three because it didn't make much sense to place a 3rd
+* order with all the confusing terms when only a 1st order was needed; it would
+* have also encumbered the matrix solver with useless elements.
+*
+*
+* [PARAMETERS]
+* (respecting the indices of the matrix)
+*
+* A[1:3,1:3]  = A matrix, 3x3;
+* B[1:3,1]    = B vector, 3x1;
+* C[1,1:3]    = C vector, 1x3;
+* D[1,1]      = D vector, 1x1;
+* ic[1:3]     = initial conditions vector.
+*
+* - Hidden:
+*
+* Rpar [Ohm]  = LTspice's specific for capacitors, default 1G.
+*
+*
+* [CHARACTERISTICS]
+*
+* - Depending on the case, not all parameters are needed:
+*
+*       |       A       |   B   |       C       |   D   | ic
+* ------+---------------+-------+---------------+-------+-------
+*       |  [x , 0 , 0]  |  [x]  |               |       |  [x]
+*  1st  |  [0 , 0 , 0]  |  [0]  |  [x , 0 , 0]  |  [x]  |  [0]
+*       |  [0 , 0 , 0]  |  [0]  |               |       |  [0]
+* ------+---------------+-------+---------------+-------+-------
+*       |  [x , x , 0]  |  [x]  |               |       |  [x]
+*  2nd  |  [x , x , 0]  |  [x]  |  [x , x , 0]  |  [x]  |  [x]
+*       |  [0 , 0 , 0]  |  [0]  |               |       |  [0]
+* ------+---------------+-------+---------------+-------+-------
+*       |  [x , x , x]  |  [x]  |               |       |  [x]
+*  3rd  |  [x , x , x]  |  [x]  |  [x , x , x]  |  [x]  |  [x]
+*       |  [x , x , x]  |  [x]  |               |       |  [x]
+* ------+---------------+-------+---------------+-------+-------
+*
+* where x = used and 0 = unused (safe to ignore). This way, when a first order
+* block is needed, there's no need to go through the trouble of nullifying or
+* setting all the other terms whenever they're needed.
+*
+*
+* [NOTES]
+*
+* - All the parameters default to zero to make their modification easier after
+* placing the symbol in the schematic.
+*
+************************
+*
+* 1st order
+*
+************************
+.subckt 1st IN OUT params:
++ A11=0 B11=0
++ C11=0 D11=0
++ ic1=0
++ Rpar=1g
+GA11 0 1 1 0 {A11}
+GB11 0 1 in 0 {B11}
+GC11 0 out 1 0 {C11}
+GD11 0 out in 0 {D11}
+C1 1 0 1 ic={ic1} Rser=0 Lser=0 Rpar={Rpar} Cpar=0 RLshunt=0
+Rout out 0 1
+.ends 1st
+************************
+*
+* 2nd order
+*
+************************
+.subckt 2nd IN OUT params:
++ A11=0  A12=0 B11=0
++ A21=0  A22=0 B21=0
++ C11=0  C12=0 D11=0
++ ic1=0 ic2=0
++ Rpar=1g
+GA11 0 1 1 0 {A11}
+GA12 0 1 2 0 {A12}
+GA21 0 2 1 0 {A21}
+GA22 0 2 2 0 {A22}
+GB11 0 1 in 0 {B11}
+GB21 0 2 in 0 {B21}
+GC11 0 out 1 0 {C11}
+GC12 0 out 2 0 {C12}
+GD11 0 out in 0 {D11}
+C1 1 0 1 ic={ic1} Rser=0 Lser=0 Rpar={Rpar} Cpar=0 RLshunt=0
+C2 2 0 1 ic={ic2} Rser=0 Lser=0 Rpar={Rpar} Cpar=0 RLshunt=0
+Rout out 0 1
+.ends 2nd
+************************
+*
+* 3rd order
+*
+************************
+.subckt 3rd IN OUT params:
++  A11=0 A12=0 A13=0 B11=0
++  A21=0 A22=0 A23=0 B21=0
++  A31=0 A32=0 A33=0 B31=0
++  C11=0 C12=0 C13=0 D11=0
++  ic1=0 ic2=0 ic3=0
++ Rpar=1g
+GA11 0 1 1 0 {A11}
+GA12 0 1 2 0 {A12}
+GA13 0 1 3 0 {A13}
+GA21 0 2 1 0 {A21}
+GA22 0 2 2 0 {A22}
+GA23 0 2 3 0 {A23}
+GA31 0 3 1 0 {A31}
+GA32 0 3 2 0 {A32}
+GA33 0 3 3 0 {A33}
+GB11 0 1 in 0 {B11}
+GB21 0 2 in 0 {B21}
+GB31 0 3 in 0 {B31}
+GC11 0 out 1 0 {C11}
+GC12 0 out 2 0 {C12}
+GC13 0 out 3 0 {C13}
+GD11 0 out in 0 {D11}
+C1 1 0 1 ic={ic1} Rser=0 Lser=0 Rpar={Rpar} Cpar=0 RLshunt=0
+C2 2 0 1 ic={ic2} Rser=0 Lser=0 Rpar={Rpar} Cpar=0 RLshunt=0
+C3 3 0 1 ic={ic3} Rser=0 Lser=0 Rpar={Rpar} Cpar=0 RLshunt=0
+Rout out 0 1
+.ends 3rd
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2013.02.03	- Minor corrections and rearrangements.
+* 2018.12.15  - GPL'd.
+*
+********************************************************************************

@@ -1,0 +1,970 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+*  Ideal macromodels for aid in simulation with LTspice related to control or
+* filtering, signal processing in general.
+* 
+*   Vlad, ©2008 - today
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - All the subcircuits are idealized versions to allow block-level simulation
+* without the speed penalty.
+*
+*
+* [SYMBOL]
+*
+* - For those symbols who use 'IN' and/or 'OUT', their explanation is, mostly,
+* skipped since it should be self-explanatory.
+* - In general, all inputs are floating and outputs are a 1 Ohm resistance,
+* except othwerwise noted.
+*
+********************************************************************************
+********************************************************************************
+*
+*   AGC - Automatic gain control
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN    = input, floating.
+* OUT   = outputs the unity amplitude input, Rout=1.
+* GAIN  = outputs the gain, in volts, Rout=1;
+* FREQ  = external frequency control, anything connected to this pin overrides
+*       internal settings, Rin=1G.
+*
+*
+* [PARAMETERS]
+*
+* f   [Hz]    = working frequency, default 1k;
+* min [V]     = minimum estimated gain, to avoid division by zero, default 0.1.
+* filt=<1,2>  = selects between two adaptive filtering methods:
+*             1. moving average -- fast temporal response, but noisy;
+*             2. 4th order Bessel -- more delay, but better filtering (default);
+* kf=(0..1]   = multiplier for the Bessel cutoff frequency, 1 means fc=f (not
+*             recommended), default 0.2.
+*
+* [HIDDEN]
+*
+* lim [V] = internal limits to avoid clipping, default 1g.
+*
+********************************************************************************
+.subckt AGC IN OUT GAIN FREQ params: f=1k min=0.1 lim=1g kf=0.2 filt=2
++ maf=(filt<2) bes=(filt>=2)
+Vf freq 0 {f} rser=1g
+Rdummy freq 666 1
+* input sin/cos multiplier
+Ai freq in 0 0 0 201 101 0 MODULATOR mark=1 space=0
+* sin/cos average
+*** adaptive moving average
+Aaidt 0 {101*maf} 0 0 0 0 {102*maf} 0 ota vhigh={lim} vlow={-lim} cout=0.5 linear
+Badel {103*maf} 0 V=delay(v({102*maf}),0.5/v(freq))
+Aamaf {103*maf} {102*maf} {666*maf} 0 0 0 {199*maf} 0 ota vhigh={lim} vlow={-lim} rout=1 g=2 linear
+Abidt 0 {201*maf} 0 0 0 0 {202*maf} 0 ota vhigh={lim} vlow={-lim} cout=0.5 linear
+Bbdel {203*maf} 0 V=delay(v({202*maf}),0.5/v(freq))
+Abmaf {203*maf} {202*maf} {666*maf} 0 0 0 {299*maf} 0 ota vhigh={lim} vlow={-lim} rout=1 g=2 linear
+*** 4th order variable Bessel
+Ab1 {299*bes} {201*bes} {999*bes} 0 0 0 {210*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear
+Ab2 {299*bes} {210*bes} {999*bes} 0 0 0 {211*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear g={105/45}
+Ab3 {299*bes} {211*bes} {999*bes} 0 0 0 {212*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear g={45/10}
+Ab4 {299*bes} {212*bes} {999*bes} 0 0 0 {299*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear g=10
+Ef {999*bes} 0 {666*bes} 0 {kf}
+Aa1 {199*bes} {101*bes} {999*bes} 0 0 0 {110*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear
+Aa2 {199*bes} {110*bes} {999*bes} 0 0 0 {111*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear g={105/45}
+Aa3 {199*bes} {111*bes} {999*bes} 0 0 0 {112*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear g={45/10}
+Aa4 {199*bes} {112*bes} {999*bes} 0 0 0 {199*bes} 0 ota vhigh={lim} vlow={-lim} cout={0.5/pi} rout=1g linear g=10
+* magnitude calculation
+*** a^2+b^2
+Aasq 0 199 199 0 0 0 magsq 0 ota vhigh={lim} rout=1 g=4 linear
+Absq 0 299 299 0 0 0 magsq 0 ota vhigh={lim} g=4 linear
+*** implicit sqrt()
+Amaglf magcomp magsq 0 0 0 0 mag 0 ota vhigh={lim} cout={1n/f} rout=1g g=table({-lim},{lim},0,0,{lim},{lim})
+Amagsq 0 mag mag 0 0 0 magcomp 0 ota vhigh={lim} rout=1 linear
+* gain output, implicit division
+Againsq 0 gain mag 0 0 0 gainsq 0 ota vhigh={lim} rout=1 linear
+Again gainsq 0 0 0 0 0 gain 0 ota ref=1 vhigh={1/min} cout={1n/f} rout=1g iout={1/min}
+* unity amplitude output
+Aout 0 in gain 0 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+.ends AGC
+********************************************************************************
+********************************************************************************
+*
+*   Dead-time
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* Vhigh,Vlow  [V] = output logic levels, defaults <1,0>;
+* ref         [V] = input logic threshold, default 0.5;
+* dt          [s] = dead-time, default 1u.
+*
+* - Hidden:
+*
+* td,tripdt   [s] = LTspice's specific for A-devices, defaults <0,0>.
+*
+********************************************************************************
+.subckt DeadTime IN OUT params: Vhigh=1 Vlow=0 ref=(Vhigh+Vlow)/2 dt=1u td=0 tripdt=0
+Ad 0 in 0 0 0 0 1 0 AND ref={ref} td={dt+td} vhigh={Vhigh} vlow={Vlow} tripdt={tripdt}
+Aout 0 in 0 1 0 0 out 0 AND ref={ref} vlow={Vlow} vhigh={Vhigh} td={td} tripdt={tripdt}
+.ends DeadTime
+********************************************************************************
+********************************************************************************
+*
+*   Dead-zone
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* dz  [V] = dead-zone, anything between <-dz:dz> is zero, default 1;
+* lim [V] = upper/lower clipping limits, default 1k.
+*
+* Hidden:
+*
+* Cout  [F] = output capacitance to aid convergence, default 0.
+*
+********************************************************************************
+.subckt DeadZone IN OUT params: dz=1 lim=1k Cout=0
+Gdz 0 out in 0 table({-lim},{-lim+dz},{-dz},0,{dz},0,{lim},{lim-dz})
+Cdz 0 out {Cout} Rpar=1
+.ends DeadZone
+********************************************************************************
+********************************************************************************
+*
+*   Delay, z^-1 or exp(-st)
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* t [s] = delay time, negative values mean negative output, default 1m.
+*
+********************************************************************************
+.subckt Delay IN OUT params: t=1m
+Gd 0 1 in 0 {sgn(t)}
+;Td 1 0 out 0 Td={abs(t)} Z0=1
+Od 1 0 out 0 z
+.model z ltra L={abs(t)} C={abs(t)} lininterp
+Rout 0 out 1
+.ends Delay
+********************************************************************************
+********************************************************************************
+*
+*   Diff - Differentiator
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* tau [s] = differentiation time-constant.
+*
+* - Hidden:
+*
+* Rser [Ohm]  = series resistance for the inductor, default 0;
+* Rpar [Ohm]  = parallel resistance across the inductor, default 1G.
+*
+********************************************************************************
+.subckt Diff IN OUT params: tau=1m Rser=0 Rpar=0
+Gd 0 out in 0 1
+Ld out 0 {tau} Rser={Rser} Rpar={Rpar} Cpar=0
+.ends Diff
+********************************************************************************
+********************************************************************************
+*
+*   FreqDet - Frequency detector
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* 1,2 = differential inputs, floating;
+* out = output, Rout=1.
+*
+* [PARAMETERS]
+*
+* limit [s]         = the lowest estimate for the period, default 1m;
+* gain=<-inf..inf>  = sets the gain for the input differentiator for the cases
+*                   when the input signals are too weak /strong, default 1.
+*
+* - Hidden:
+*
+* tripdt [s]  = LTspice's specific for A-devices, default 1u;
+* lim         = internal limits to avoid clipping, default minimum 1g.
+*
+********************************************************************************
+.subckt FreqDet 1 2 out params: limit=1m gain=1
++ tripdt=limit/1k lim=1/limit
+* input differentiator, discrete to avoid giga-spikes
+Gin 0 diffin 1 2 {gain}
+Rdiff diffdel 0 1
+Tdiff diffin 0 diffdel 0 Td={limit} Z0=1
+* interweaved clock
+Adiff diffin diffdel 0 0 0 _clk clk 0 SCHMITT vt=0 vh=0 tripdt={tripdt}
+* calculate period with resettable integrators + S&H
+Aidt1 0 clk 0 0 0 0 idt1 0 ota vhigh={lim} vlow=0 rout=1g cout=1 linear ic=0
+Aidtsh1 idt1 0 clk 0 0 0 _idt1 0 SAMPLEHOLD ref=0.9 tripdt={tripdt}
+Aspl1 idt1 _idt1 _clk 0 0 0 sum 0 SAMPLEHOLD ref=0.1 tripdt={tripdt} ic={limit}
+Aidt2 0 _clk 0 0 0 0 idt2 0 ota vhigh={lim} vlow=0 rout=1g cout=1 linear ic=0
+Aidtsh2 idt2 0 _clk 0 0 0 _idt2 0 SAMPLEHOLD ref=0.9 tripdt={tripdt}
+Aspl2 idt2 _idt2 clk 0 0 0 sum 0 SAMPLEHOLD ref=0.1 tripdt={tripdt}
+* f=1/T, implicit division
+Aper_lf _out 0 0 0 0 0 out 0 ota ref=0.5 vhigh={lim} cout={1n*limit} rout=1g iout={lim}
+Aper 0 out sum 0 0 0 _out 0 ota vhigh={lim} rout=1 linear ; ic=0
+.ends FreqDet
+
+********************************************************************************
+********************************************************************************
+*
+*   Gain - Gain/Buffer
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* G=<-inf..inf> = gain, default -1;
+* Rout [Ohm]    = output resistance, default 1;
+* dB=<0,1>      = whether the gain should be linear (0, default) or dB (1).
+*
+* Hidden:
+*
+* Cout  [F] = output capacitance for aid in convergence, default 0.
+*
+********************************************************************************
+.subckt Gain IN OUT params: G=-1 Rout=1 dB=0 cout=0
+G 0 out in 0 {if(dB>0,10**(G/20),G)/Rout}
+C out 0 {cout} rpar={Rout}
+.ends Gain
+********************************************************************************
+********************************************************************************
+*
+*   Integ - Integrator
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* tau [s]     = period of integration, default 1m;
+* ic  [V]     = initial conditions, default 0.
+*
+* Hidden:
+*
+* Rpar  [Ohm] = parallel resistance across the capacitor, default 1g.
+*
+********************************************************************************
+.subckt Integ IN OUT params: tau=1m ic=0 Rpar=1g
+G 0 out in 0 1
+C out 0 {tau} rpar={Rpar} ic={ic}
+.ends Integ
+********************************************************************************
+********************************************************************************
+*
+*   Integ_r - Resetable integrator with external period control
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN    = input, floating;
+* OUT   = output, Rout=1;
+* 1     = external reset, Rin=1g;
+* EXT   = external control for the period of integration, anything connected to
+*       it overrides {tau} (but not its signum), Rin=1g.
+*
+*
+* [PARAMETERS]
+*
+* tau [s]     = sets the time constant, its signum controls the output's,
+*             default 1m;
+* ic  [V]     = initial conditions, default 0;
+* edge=<0,1>  = selects the behaviour of the reset:
+*               0 => resets and holds reset as long as V(1)>ref (default)
+*               1 => edge triggered reset, mod()-like behaviour.
+*
+* Hidden:
+*
+* ref   [V]   = logic threshold for the external reset, default 0.5;
+* lim   [V]   = internal limits to avoid clipping, default 1g;
+* fmax  [Hz]  = estimated maximum bandwidth for the signal, default 1meg.
+*
+********************************************************************************
+.subckt Integ_r IN OUT 1 TAU params: tau=1m edge=0 ic=0 lim=1g fmax=1meg ref=0.5 gain=1
+Aidt 0 in 0 0 0 0 idt 0 ota vhigh={lim} vlow={-lim} rout=1g cout=1 ic={ic} linear
+Ash idt 0 {buf(edge)} {inv(edge)} 0 0 sh 0 SAMPLEHOLD vhigh={lim} vlow={-lim} ref={ref}
+Aout sh idt f 0 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1 g={gain*sgn(tau)} linear
+Adiv fb 0 0 0 0 0 f 0 ota vhigh={lim} rout=1g cout={1n/fmax} ref=1 linear
+Afb 0 f tau 0 0 0 fb 0 ota vhigh={lim} rout=1 linear
+Vext tau 0 {tau} rser=1g
+Vreset 1 0 1 Rser=1g
+.ends Integ_r
+********************************************************************************
+********************************************************************************
+*
+*   Laplace - 2nd order Laplace transform
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* f [Hz]  = frequency scaling, relative to {b0/b2}, default 1;
+* g       = gain, default -1;
+* a[2:0]  = numerator's terms, indices are powers of s, defaults <1,2,10>;
+* b[1,0]  = denominator's terms, indices are powers of s, defaults <2,3,1>.
+*
+* Hidden
+*
+* Rpar  [Ohm] = LTspice's specific for capacitors, default 1g.
+*
+* [NOTES]
+*
+* - The transfer function cannot be less than strictly proper 2nd order.
+*
+********************************************************************************
+.subckt Laplace in out params: f=1 g=-1 a2=1 a1=2 a0=4 b2=2 b1=3 b0=1 Rpar=1g
+Ga0 0 1 in 0 {a0*g}
+Gb0 0 1 0 out {b0}
+Cs1 1 0 {b1/2/pi/f} Rpar={Rpar}
+Ga1 0 2 in 0 {a1*g}
+Gb1 0 2 1 out {b1}
+Cs2 2 0 {b2/2/pi/f} Rpar={Rpar}
+Ga2 0 out in 0 {a2/b2*g}
+Gb2 0 out 2 0 1
+Rout out 0 1
+.ends Laplace
+********************************************************************************
+********************************************************************************
+*
+*   LeadLag - Voltage-controlled lead/lag filter
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN  = input, floating;
+* OUT = output, Rout=1;
+* CTL = external phase control, anything connected to it overrides internal
+*     settings, Rin=1g.
+*
+*
+* [PARAMETERS]
+*
+* f               [Hz]  = working frequency, default 1k;
+* phi=<-inf..inf> [rad] = phase displacement control, effective within the
+*                       <-pi..pi> interval, default pi/3.
+* deg=[0,1]             = specifies the units for the angle control:
+*                         0 => radians (default);
+*                         1 => degrees.
+*
+* - Hidden:
+*
+* lim = internal limit to avoid clipping, default 1g.
+*
+*
+* [CHARACTERISTICS]
+*
+* - It has a 2nd order generalized integrator at the input, with quality factor
+* sqrt(2), so stabilizing will occur in one period, or so.
+*
+*
+* [NOTES]
+*
+* - Anything connected at pin 'CTL' overrides {phi}.
+* - Hint: since 'CTL' has Rin=1g, connecting external sources with Rout=1g makes
+* the resulting voltage to be V(CTL)+phi; Rin/Rout combinations possible.
+*
+********************************************************************************
+.subckt LeadLag IN OUT CTL params: f=1k phi=pi/3 lim=1g deg=0
+* SOGI input
+Aerr v in 0 0 0 0 err 0 ota vhigh={lim} vlow={-lim} Rout=1 linear g={sqrt(2)}
+Av _v err 0 0 0 0 v 0 ota vhigh={lim} vlow={-lim} cout={.5/pi/f} linear
+Aqv 0 v 0 0 0 0 _v 0 ota vhigh={lim} vlow={-lim} cout={.5/pi/f} linear
+* sin/cos multiplication
+Asin 0 v cos 0 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+Acos _v 0 sin 0 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Vctl ctl 0 {if(deg,phi*pi/180,phi)} Rser=1g
+Bcos 0 cos i=cos(V(ctl)) rpar=1
+Bsin 0 sin i=sin(V(ctl)) rpar=1
+.ends LeadLag
+********************************************************************************
+********************************************************************************
+*
+*   Lim - Hard/soft limiter
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* Max,Min [V]   = the upper and lower limits, defaults <1,-1>.
+* soft=<0,1>    = selects asymmetric tanh() (1), or hard (0, default) limit.
+*
+* Hidden:
+*
+* Cout    [F]   = parallel capacitance to aid convergence, default 0.
+*
+********************************************************************************
+.subckt Lim 1 2 params: Min=-1 Max=1 Cout=0 soft=0 s=buf(soft) h=inv(soft)
+Ahard 0 {h} 0 0 0 0 {2*h} 0 OTA vhigh={Max} vlow={Min} Rout=1 Cout={Cout} g=table({min},{min},0,0,{max},{max})
+Asoft 0 {s} 0 0 0 0 {2*s} 0 OTA vhigh={Max} vlow={Min} isrc={Max} isink={Min} Rout=1 Cout={Cout} asym
+.ends Lim
+********************************************************************************
+********************************************************************************
+*
+*   LimExt - Limiter with external limits
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN      = input, floating;
+* OUT     = output, Rout=1;
+* MIN,MAX = external upper limit pins, anything connected to these overrides
+*         internal settings, Rin=1G.
+*
+* [PARAMETERS]
+*
+* Max,Min [V] = the upper and lower limits, defaults <1,-1>.
+*
+* - Hidden:
+*
+* lim   [V] = internal limits to avoid clipping, default 1g;
+* Cout  [F] = output capacitance for aid in convergence, default 0;
+* tau   [s] = LTspice's specific for A-devices, should not be zero, default 1n.
+*
+********************************************************************************
+.subckt LimExt in out Max Min params: Min=-1 Max=1 Cout=0 lim=1g tau=1n
+Amax 0 Max inMax 0 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Anormal 0 normal in 0 0 0 out 0 ota vhigh={lim} vlow={-lim} Rout=1 Cout={Cout} ref=-0.5 g=2 linear
+Amin 0 Min inMin 0 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Vmax Max 0 {Max} Rser=1g
+Vmin Min 0 {Min} Rser=1g
+AinMax in Max 0 0 0 normal inMax 0 SCHMITT vt=0 vh=0 tau={tau}
+AinMin Min in 0 0 0 normal inMin 0 SCHMITT vt=0 vh=0 tau={1.1*tau}
+.ends LimExt
+********************************************************************************
+********************************************************************************
+*
+*   MUX - Analog multiplexer
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* - Hidden:
+*
+* lim   [V] = internal limits to avoid clipping, default 1g;
+* Cout  [F] = output capacitance for aid in cinvergence, default 0.
+*
+*
+* [CHARACTERISTICS]
+*
+* - V(CTL) activates one of the inputs numbered from '1' to '8' when reaching
+* the corresponding voltage level. Only the integer part of the control voltage
+* is considered.
+*
+********************************************************************************
+.subckt MUX 1 2 3 4 5 6 7 8 OUT CTL params: lim=1g Cout=0
+A1 ctl 0 0 0 0 0 c1 0 BUF ref=1
+A2 ctl 0 0 0 0 0 c2 0 BUF ref=2
+A3 ctl 0 0 0 0 0 c3 0 BUF ref=3
+A4 ctl 0 0 0 0 0 c4 0 BUF ref=4
+A5 ctl 0 0 0 0 0 c5 0 BUF ref=5
+A6 ctl 0 0 0 0 0 c6 0 BUF ref=6
+A7 ctl 0 0 0 0 0 c7 0 BUF ref=7
+A8 ctl 0 0 0 0 0 c8 0 BUF ref=8
+A9 ctl 0 0 0 0 0 c9 0 BUF ref=9
+Ao1 0 1 c1 c2 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1 cout={Cout} linear
+Ao2 0 2 c2 c3 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Ao3 0 3 c3 c4 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Ao4 0 4 c4 c5 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Ao5 0 5 c5 c6 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Ao6 0 6 c6 c7 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Ao7 0 7 c7 c8 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Ao8 0 8 c8 c9 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+.ends MUX
+********************************************************************************
+********************************************************************************
+*
+*   PhaseDet - Phase detector
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* f [Hz]    = working frequency, default 1k;
+* deg=<0,1> = whether output is in radians (0) or degrees (1, default).
+*
+* - Hidden:
+*
+* per   [s]   = period for the moving average filter, default {1/f};
+* Rpar  [Ohm] = LTspice's specific for capacitors, default 1G.
+*
+*
+* [NOTES]
+*
+* - The filter is a moving average over one period but, if there is no offset at
+* the input, it can be changed to one half for a faster response.
+*
+********************************************************************************
+.subckt PhaseDet in out params: f=1k deg=1 per=1/f Rpar=1G
+Asc 0 in 0 0 0 2 1 0 MODULATOR mark={f} space=0
+Ts 1 0 11 0 Td={per} Z0=1
+Rs 11 0 1
+Gs 0 s 1 11 1
+Cs s 0 {per} ic=0 Rpar={Rpar}
+Tc 2 0 22 0 Td={per} Z0=1
+Rc 22 0 1
+Gc 0 c 2 22 1
+Cc c 0 {per} ic=0 Rpar={Rpar}
+Br 0 out I=atan2(-v(c),v(s)) Rpar={(180/pi)**u(deg)}
+.ends PhaseDet
+********************************************************************************
+********************************************************************************
+*
+*   PID - Proportional-Integral-Derivative controller (with anti-windup)
+*
+********************************************************************************
+*
+* [PARAMETERS]
+*
+* Kp          = proportional value, default 0;
+* Ki          = integral value, default 0;
+* Kd          = derivative value, default 0;
+* min,max [V] = lower and upper limits for the anti-windup, defaults <0, 0> (no
+*               limits);
+* Klim        = anti-windup amplification factor, default 1;
+* ic      [V] = initial conditions, default <0>.
+*
+*
+* - Hidden:
+*
+* Rpari,Rserd [Ohm] = shunt and series resistances for the integrator and the
+*                     differentiator, defaults <1g, 1m>.
+*
+*
+* [CHARACTERISTICS]
+*
+* - Any combination of {Kp}, {Ki} or {Kd} works. Because of that, the default
+* values are null, for each, so that when the symbol is placed on the schematic,
+* the unwanted ones can be safely deleted from the SpiceLine to not take space.
+*
+********************************
+*
+*     Analog version
+*
+********************************
+.subckt PID 100 200 params: Kp=0 Ki=0 Kd=0 min=0 max=0 Klim=1 ic=0 Rpari=1g Rserd=1m
++ _Kp=if( Kp==0,1,Kp ) _Ki=if( Ki==0,1,Ki ) _Kd=if( Kd==0,1,Kd )
++ _min=if(min==0,-1g,min) _max=if(max==0,1g,max) aw=if(min==0 & max==0,0,1)
+Gin 0 {u(Kd+Kp+Ki)} 100 0 1
+Gout 0 200 {u(Kp+Ki+Kd)} 0 table({_min},{_min},{_max},{_max})
+Rout 0 200 1
+Lpid {u(Kd)} {2*((u(Kp)&u(Kd))+(u(Ki)&u(Kd)&u(Kp)==0))} {_Kd} Rser={Rserd} Rpar=0 Cpar=0 noiseless
+Rpid {(u(Kd)&u(Kp))+u(Kp)} {3*(u(Kp)&u(Ki))} {_Kp} noiseless
+Cpid {3*(u(Kp)&u(Ki))+2*(u(Kd)&u(Ki)&u(Kp)==0)+(u(Kp)==0&u(Kd)==0)} 0 {1/_Ki} Rser=0 Lser=0 RLshunt=0 Rpar={Rpari} Cpar=0 ic={ic} noiseless
+Glim {3*(u(Kp)&u(Ki)&aw)+2*(u(Kd)&u(Ki)&u(Kp)==0&aw)+(u(Kp)==0&u(Kd)==0&aw)} 0 {u(Kd+Kp+Ki)&aw} {aw*200} {Klim/_Ki}
+.ends PID
+********************************
+*
+*     Digital version
+*
+********************************
+*
+* [PARAMETERS]
+*
+* Kp          = proportional value, default 0;
+* Ki          = integral value, default 0;
+* Kd          = derivative value, default 0;
+* min,max [V] = lower and upper limits for the anti-windup, defaults <0, 0> (no
+*               limits);
+* Klim        = anti-windup amplification factor, default 1;
+* ic      [V] = initial conditions, default <0>;
+* Ts      [s] = sampling time, default <1m>;
+* method      = integration method:
+*               0 - forward Euler (default)
+*               1 - backward Euler
+*               2 - trapezoidal.
+*
+* [NOTES]
+*
+* - There is no internal S&H, so you'll have to either supply your own, or rely
+* on the behaviour of the tlines.
+*
+********************************
+.subckt PIDd 100 200 params: Kp=0 Ki=0 Kd=0 Ts=1m method=0 min=0 max=0 Klim=1 ic=0
++ _kp=u(Kp) _ki=u(ki) _kd=u(Kd) m=limit(round(method), 0, 2)
++ _min=if(min==0,-1g,min) _max=if(max==0,1g,max) aw=if(min==0 & max==0, 0, 1)
+Gbuf 0 101 100 0 1
+Gp 0 {_kp*201} {_kp*101} 0 {Kp}
+Td 101 0 301 0 Td={Ts} Z0=1
+Rd 301 0 1
+Gd 0 {_kd*201} {_kd*101} {_kd*301} {Kd/Ts}
+Gi 0 {_ki*401} {_ki*101} {_ki*402} 1
+Ti 0 {_ki*401} {_ki*402} 0 Td={Ts} Z0=1
+Ri {_ki*402} 0 1
+Gm 0 {_ki*201} {_ki*if(m==1 | m==2, 401, 0)} {_ki*if(m==0 | m==2, 402, 0)} {Ki*Ts*if(m==2, 0.5, 1)}
+Vic 201 0 {ic} Rser=1
+Glim 0 {aw*_ki*402} {aw*_ki*200} {aw*_ki*201} {-Klim/Ki**_ki}
+Gout 0 200 201 0 table({_min},{_min},{_max},{_max})
+Rout 200 0 1
+.ends PIDd
+********************************************************************************
+********************************************************************************
+*
+*   PLL - Phase-Locked Loop
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN      = input, floating;
+* SIN,COS = unity sine/cosine outputs, Rout=1;
+* FREQ    = outputs the frequency, Zout=Kp-j*Ki;
+* THETA   = outputs the angle, wt, Rout=1.
+*
+* [PARAMETERS]
+*
+* f [Hz]  = central frequency, default 50;
+* Kp,Ki   = (PI) loop filter's parameters, defaults <6.1,81>.
+*
+* - Hidden:
+*
+* Kerr      = quality factor for the adaptive SOGI, default sqrt(2);
+* ic [V]    = initial conditions for the loop filter, default {f};
+* lim       = internal limits to avoid clipping, default 1g.
+*
+********************************************************************************
+.subckt PLL IN SIN COS FREQ THETA params: f=50 kp=6.1 ki=81 Kerr=sqrt(2)
++ ic=f lim=1g
+* adaptive SOGI
+Aerr V in 0 0 0 0 err 0 ota vlow={-lim} vhigh={lim} rout=1 g={Kerr} linear
+AV _V err freq 0 0 0 V 0 ota vlow={-lim} vhigh={lim} rout=1g cout={.5/pi} linear
+AQV 0 V freq 0 0 0 _V 0 ota vlow={-lim} vhigh={lim} rout=1g cout={.5/pi} linear
+* magnitude
+AVmag 0 V V 0 0 0 magsq 0 ota vhigh={lim} rout=1 linear
+AQVmag 0 _V _V 0 0 0 magsq 0 ota vhigh={lim} linear
+* sqrt(magnitude), implicit method
+Asqrt_lf _magsq magsq 0 0 0 0 mag 0 ota vhigh={lim} cout={1n/f} rout=1g linear
+Asqrt 0 mag mag 0 0 0 _magsq 0 ota vhigh={lim} rout=1  g=table({-lim},{lim},0,0,{lim},{lim})
+* phase det
+Av_cos freq V 0 0 0 phidet 0 0 MODULATOR mark=1 space=0
+Aqv_sin freq _V 0 0 0 0 phidet 0 MODULATOR mark=1 space=0
+Asc freq 0 0 0 0 cos sin 0 MODULATOR mark=1 space=0
+* adaptive moving average + loop filter
+Bphidet 0 11 I=v(phidet)/v(mag) Cpar={0.5/f} Rpar=1g
+Bdelay 0 12 I=delay(v(11), 1/v(freq)) Rpar=1 Cpar={1u/f}
+GLF 0 freq 11 12 1
+CLF freq 0 {1/ki} ic={ic} Rser={kp} Lser=0 RLshunt=0 Rpar=1g Cpar=0
+* angle
+Bwt 0 theta I=pi-atan2(v(sin),-v(cos)) Rpar=1 tripdv=5 tripdt={1u/f}
+.ends PLL
+********************************************************************************
+********************************************************************************
+*
+*   RMS - RMS and peak value
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - It's based on LTspice's brilliantly simple, frequency-independent method.
+*
+*
+* [PARAMETERS]
+*
+* fc [Hz] = corner frequency for the 2nd order filter, default 100;
+* b1,b0   = terms for the filter's denominator, default Bessel.
+*
+* - Hidden:
+*
+* lim = internal limit to avoid clipping, default 1g.
+*
+*
+* [CHARACTERISTICS]
+*
+* - The output impedance is {-j/(2*pi*fc)}.
+*
+********************************************************************************
+.subckt RMS in out params: fc=100 b0=3 b1=3 lim=1g
+Asq 0 in in 0 0 0 sq 0 ota vhigh={lim} rout=1 linear
+Adiv_lf _sq sq 0 0 0 0 div 0 ota vhigh={lim} rout=1g cout={1n/fc} linear
+Adiv 0 div out 0 0 0 _sq 0 ota vhigh={lim} rout=1 linear
+Ab0 out div 0 0 0 0 1 0 ota vhigh={lim} vlow={-lim} cout={.5/pi/fc} rout=1g g={b0/b1} linear
+Ab1 out 1 0 0 0 0 out 0 ota vhigh={lim} vlow={-lim} cout={.5/pi/fc} rout=1g g={b1} linear
+.ends RMS
+********************************************************************************
+********************************************************************************
+*
+*   SampledSource - Sampled sine/pulse source
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* 1       = positive output;
+* 2       = negative output;
+* 3 (CTS) = "Continuous-Time Signal", original, non-sampled output, Rout=0;
+* CLK     = clock input/output, Rout=1g.
+*
+* [PARAMETERS]
+*
+* f0 [Hz]       = sampling frequency, default 1k;
+* SP=<0,1>      = SINE (0, default) or PULSE (1) source;
+* td [s]        = delay for the sampling clock, default 0;
+* tr [s]        = rising time for the clock's edge, default 1m/f0;
+* Rout [Ohm]    = output resistance, set to zero for current source, default 1;
+*     [LTspice's specific for SINE source]
+* Voffset, Vamp, Theta, Phi;
+*     [LTspice's specific for PULSE source]
+* V1, V2, Trise, Tfall, Ton;
+*     [LTspice's SINE and PULSE source, common]
+* Freq, Tdelay, Ncycles;
+* ac [V]        = .AC magnitude, default 1;
+* acphase [deg] = .AC phase, default 0.
+*
+*
+* [HIDDEN]
+*
+* vhigh,vlow  [V] = Internal S&H limits to avoid clipping, defaults <1k,-1k>;
+* tripdt[s]       = LTspice specific for A-devices, default 0;
+* ref [V]         = S&H's reference for the clock's rising edge, default 0.5.
+*
+********************************************************************************
+.subckt SampledSource 1 2 3 CLK params:
++ f0=1k SP=0 td=0 tr=1m/f0 Rout=1
++ Voffset=0 Vamp=1 Theta=0 Phi=0
++ V1=0 V2=1 Trise=10m Tfall=0 Ton=0
++ Freq=100 Tdelay=0 Ncycles=0 ac=1 acphase=0
++ vhigh=1k vlow=-vhigh tripdt=0 ref=0.5
+Vclk clk 2 pulse 0 1 {td} {tr} 0 0 {if(f0==0,1k,1/f0)} Rser={if(f0==0,1g,1)}
+Iac {2*u(abs(ac))} {u(abs(ac))} ac {ac} acphase {acphase}
+Ash 3 2 clk 2 2 2 {3*(1-u(Rout))+1} 2 SAMPLEHOLD Rout={Rout} vhigh={vhigh} vlow={vlow} tripdt={tripdt} ref={ref}
+Vsin {3*inv(SP)} {2*inv(SP)} sin {Voffset} {Vamp} {Freq} {Tdelay} {Theta} {Phi} {Ncycles} ac {ac} {acphase}
+Vpulse {3*u(SP)} {2*u(SP)} pulse {V1} {V2} {Tdelay} {Trise} {Tfall} {Ton} {1/Freq} {Ncycles} ac {ac} {acphase}
+Gout {2*(1-u(Rout))} {1-u(Rout)} {4*(1-u(Rout))} {2*(1-u(Rout))} 1
+.ends SampledSource
+********************************************************************************
+********************************************************************************
+*
+*   SlewRate - slew-rate limiter
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN  = input, floating;
+* OUT = output, Ro~1.
+*
+*
+* [PARAMETERS]
+*
+* Rise,Fall [V/s] = rising/falling slopes, defaults <4.5,-4.5>;
+* t0        [s]   = period for internal delay, lower values improve accuracy, at
+*                 the cost of increased simulation time, default 1m.
+*
+* Hidden:
+*
+* Cout  [F] = output capacitance for aid in convergence, default t0/1k.
+*
+********************************************************************************
+.subckt SlewRate in out params: Rise=4.5 Fall=-Rise t0=1m Cout=t0/1k
+Gin 0 1 in out table({fall*t0},{fall*t0},{rise*t0},{rise*t0})
+Gfb 0 1 out 0 1
+Td 1 0 out 0 Td={t0} Z0=1
+Cout out 0 {Cout} Rpar=1
+.ends SlewRate
+********************************************************************************
+********************************************************************************
+*
+*   SOGI - Second order generalized integrator, adaptive
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN    = input, floating;
+* V,_V  = outputs, Zout=-j/(2*pi);
+* F     = external frequency input, Rin=1G;
+*
+* [PARAMETERS]
+*
+* f=<0..inf> [Hz] = frequency, default 50;
+* ke              = quality factor set by the error amplifier, default sqrt(2).
+*
+* - Hidden:
+*
+* lim = internal limit to avoid clipping, default 1g.
+*
+********************************************************************************
+.subckt SOGI in v _v f params: f=50 ke=sqrt(2) lim=1g
+Aerr v in 0 0 0 0 err 0 OTA vhigh={lim} vlow={-lim} rout=1 g={ke} linear
+Av _v err f 0 0 0 v 0 OTA vhigh={lim} vlow={-lim} cout={.5/pi} rout=1g linear
+Aqv 0 v f 0 0 0 _v 0 OTA vhigh={lim} vlow={-lim} cout={.5/pi} rout=1g linear
+Vw f 0 {f} Rser=1g
+.ends SOGI
+********************************************************************************
+********************************************************************************
+*
+*   UpDnSpl - Upsampler/downsampler, .AC-friendly
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* 1 = input, floating;
+* 2 = output, Rout=1;
+* 3 = clock I/O, external synchronization if f0<0, floating'
+* 4 = outputs the resulting internal clock, useful for passing on sync, Rout=0.
+*
+*
+* [PARAMETERS]
+*
+* f0 [Hz]       = sampling frequency.
+*                 f0<0 => external synchronization (must match input's clock)
+*                 f0>0 => internal clock (default, 1k)
+*                 f0=0 => bypass
+* N=<-inf:inf>  = upsampler (N>=2, default 2), downsampler (N<=-2), or bypass;
+* index=<0:N-1> = sample offset. For ex.: input is [0,1,2,3,...], N=-4, index=2,
+*               then the output starts at [2,6,10,...]. If index=1, then the
+*               output is [1,5,9,...]. For N=4, index=2, output is
+*               [0,0,o,0; 0,0,1,0; 0,0,2,0; ...]. Default 0.
+*
+* - Hidden:
+*
+* ref [V]     = threshold reference for downsampler, default 0.5.
+* lim [V]     = limits to avoid clipping, default 1k.
+* tripdt [s]  = LTspice's specific for A-devices, default 1u of the upsampler's
+*             (f0*N), or downsampler's (f0/N) clock.
+*
+********************************
+.subckt UpDnSpl 1 2 3 4 params: f0=1k N=2 index=0 lim=1k ref=0.5 tripdt=1u/fspl
+* helpers
+.func mod(x,y) {x-int(x/y)*y}
+.param absN=abs(int(N)) absIdx=int(mod(abs(index),absN)) fsh=abs(f0)
++ fspl=if(upspl, absN*fsh, if( dnspl, fsh/absN, fsh))
++ tr=1m/fsh td=absIdx/if(dnspl, fsh, fspl)-tr*u(absIdx)*0
+* node helpers
+.param extf0=(f0<0) upspl=(N>=2) dnspl=(N<=-2) clkPin=if(extf0, 999, 3)
++ enup=(extf0 & upspl) endn=(extf0 & dnspl)
++ idx0N=(absIdx>0 & absIdx<(absN-1) & endn) upIdx=(extf0 & absIdx & upspl)
+*** downsample
+* external clock shaping & index selection
+Adncnt {endn*3} 0 0 0 0 0 {endn*if(absIdx==(absN-1), 999, 11)} 0 counter cycles={absN} duty={1/absN} tripdt={tripdt}
+Adninv {(endn & (absIdx<(absN-1)))*11} 0 0 0 0 {endn*if(absIdx==0, 999, 12)} 0 0 SCHMITT
++ ic=1 trise={if(absIdx==0, tr, (2*absN-1)/2/absN/fspl)} tfall={tr}
+Adnclk {idx0N*12} 0 0 0 0 0 {idx0N*999} 0 BUF tripdt={tripdt} ref={(2*absIdx)/(2*absN-1)} vhigh=1.1
+* output
+Adn {dnspl} 0 {dnspl*clkPin} 0 0 0 {dnspl*2} 0 SAMPLEHOLD Rout=1 ref={ref} vhigh={lim} vlow={-lim}
+*** upsample
+* external clock shaping
+Aupsr {enup*3} {enup*15} 0 0 0 0 {enup*if(absIdx==0, 999, 666)} 0 SRFLOP tripdt={tripdt}
+Aupdel {enup*if(absIdx==0, 999, 666)} 0 0 0 0 0 {enup*15} 0 BUF tripdt={tripdt} td={1/fspl}
+* index selection
+Aupramp {upIdx*666} {upIdx*14} 0 0 0 0 {upIdx*14} 0 SRFLOP td={tripdt}
++ trise={(2*absN-1)/(2*absN*fsh)} tfall={tr} ref={2.1*absIdx/(2*absN-1)}
+Aupidx {upIdx*14} {upIdx*13} 0 0 0 0 {upIdx*999} 0 SRFLOP ref={(2*absIdx)/(2*absN-1)} tripdt={tripdt}
+Aupres {upIdx*999} 0 0 0 0 0 {upIdx*13} 0 BUF tripdt={tripdt} td={1/fspl-tr/2}
+* output
+Aup 0 {upspl} {upspl*clkPin} 0 0 0 {upspl*2} 0 OTA vhigh={lim} vlow={-lim} rout=1 linear
+*** internal clock
+Vsh {inv(extf0)*3} 0 pulse 0 {inv(extf0)} {inv(extf0)*(td-(upspl&absIdx)*tr/2)}
++ {inv(extf0)*tr} {inv(extf0)*upspl*tr} {inv(extf0)*upspl*(1/fspl-tr)} {inv(extf0)/if(upspl, fsh, fspl)}
+*** passing on resulting clock
+Eclkout 4 0 {clkPin} 0 1
+*** bypass
+Bbypass 0 2 I=if(absN<2 | f0==0 | time>0, 0, V(1))
+.ends UpDnSpl
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2013.01.19  - Overall modifications and improvements.
+* 2013.01.27  - Modified PhaseDet so now it only has one output which can be
+*             in either radians or degrees.
+*             - Fixed the differentiator's response for extreme conditions.
+* 2013.02.03  - Added parameter {fc} to the PLL's subcircuit and info.
+*             - Changed Gain's parameter {Gain} back to {G} while resizing the
+*             symbol a bit.
+*             - Minor corrections.
+* 2013.02.04  - Corrected the node error in PLL and changed its default symbol
+*             values.
+* 2013.06.14  - Replaced all .funcs to be by the book.
+* 2013.07.23  - Added UpDnSpl, up-/downsampler.
+* 2013.11.22  - FreqDet now faster and more accurate.
+* 2013.11.23  - Adjusted UpDnSpl response for input signals greater than 1Vpk.
+*             They can now be up until 1kVpk.
+* 2013.12.07  - Improved UpDnSpl.
+* 2013.12.31  - Added external synchronization to UpDnSpl.
+* 2014.01.25  - Modified Integ_r so that sgn(tau) gives the polarity of the
+*             output.
+* 2014.04.07  - Added SampledSource from [0101].
+* 2014.04.10  - Removed {per} from PhaseDet, replaced with {1/f}.
+*             - Remade the PID.
+*             - Made possible f0=0 for SampledSource and UpDnSpl with external
+*             sync.
+*             - Added {lim} and {ref} to UpDnSpl.
+* 2014.05.02  - Corrected DeadTime.
+* 2014.06.14  - Modified FreqDet, should be less erratic.
+* 2014.06.15  - Made FreqDet with differential inputs (symbol has changed) and
+*             added parameter {gain}.
+* 2014.06.26  - Added parameter {ac} to FreqDet.
+* 2014.07.30  - Added parameter {ref} to UpDnSpl.
+* 2015.10.12  - Added PIDaw which is slow but seems to work...
+*             - Modified PLL so now it's slightly faster and outputs correct
+*             phase sin/cos and changed it's parameters to be more consistent
+*             with a PLL with a PI loop filter.
+* 2015.10.13  - Added RMS and SlewRate blocks.
+* 2015.10.19  - Added the SOGI.
+* 2015.10.29  - Modified Delay to have positive or negative output (inverted)
+*             depending on sgn(t).
+*             - Corrected SampledSource ground reference for R=0 and .AC
+*             analysis.
+* 2015.12.05  - Added Laplace block.
+* 2016.05.31  - Renamed FFT to CFT.
+*             - Minor corrections.
+* 2017.08.15  - Modified Lim to be with one element only.
+* 2018.05.01  - AGC, FreqDet, Gain, Integ_r, Laplace, LeadLag, PLL, RMS,
+*             SlewRate, SOGI, and UpDnSpl have been improved.
+*             - Modified symbols for SampledSource and UpDnSpl.
+*             - Lim now has both hard and soft limiting.
+*             - Added LimExt, a variant of Lim with external limits.
+*             - Removed {fc} and the gain-bandwidth capability from Laplace.
+*             - Removed CFT, LeadLag2, PIDaw.
+*             - GPL'd.
+* 2020.02.23  - Added Integ.
+* 2020.08.16  - Added {gain} to Integ_r.
+* 2020.08.21  - Added {deg} to LeadLag.
+* 2020.10.15  - Fixed the sign for PhaseDet.
+* 2021.05.24  - Added anti-windup to PID and PIDd.
+*             - Added {method} to PIDd for 3 methods of integration.
+********************************************************************************

@@ -1,0 +1,28 @@
+Version 0
+SymbolType BLOCK
+LINE Normal -64 -64 -64 64
+LINE Normal -64 -64 32 0
+LINE Normal -64 64 32 0
+LINE Normal -64 -32 -96 -32
+LINE Normal -64 32 -96 32
+LINE Normal 64 0 32 0
+LINE Normal -16 -80 -16 -32
+LINE Normal -16 32 -16 80
+TEXT -44 -32 Center 2 +
+TEXT -48 20 Center 2 _
+TEXT -20 0 Center 2 OTA5N
+PIN -96 -32 NONE 8
+PINATTR PinName INP
+PINATTR SpiceOrder 1
+PIN -96 32 NONE 8
+PINATTR PinName INN
+PINATTR SpiceOrder 2
+PIN 64 0 NONE 8
+PINATTR PinName OUT
+PINATTR SpiceOrder 3
+PIN -16 -80 NONE 8
+PINATTR PinName VDDA
+PINATTR SpiceOrder 4
+PIN -16 80 NONE 8
+PINATTR PinName VSSA
+PINATTR SpiceOrder 5

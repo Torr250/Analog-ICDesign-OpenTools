@@ -1,0 +1,1591 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+*  These are the subcircuit files for the symbols in [Pwr]. They are intended to
+* be idealized models of the likes found in PSIM, Matlab, OrCAD, etc, for aid in
+* large scale simulation of schematics, without the penalty of speed and without
+* sacrificing accuracy.
+*
+*    Vlad, ©2008 - today
+*
+********************************************************************************
+********************************************************************************
+*
+*       Three-level modulation
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* INa,INb,INc     = three-phase signal input, Rin=1G;
+* EXT             = external carrier control, anything connected to it overrides
+*                 the internal carrier, but doesn't disable it, Rin=1G;
+* _EN             = _enable/disable, Rin=1G;
+* A,_A,B,_B,C,_C  = complementary logic outputs, Rout=1.
+*
+*
+* [PARAMETERS]
+*
+* Vhigh,Vlow  [V]     = output logic levels, defaults <1,0>;
+* f           [Hz]    = internal carrier frequency, symmetric around zero, set
+*                     f=0 to disable, default 2k;
+* sym=(0.001..0.999)  = controls the carrier's skewness, default 0.5
+*                     (trise=tfall);
+* Vpk         [V]     = peak voltage level for the carrier, default 1;
+* dt          [s]     = internal dead-time, default 1u.
+*
+* - Hidden:
+*
+* td      [s] = Total delay time, default 1u;
+* vh      [V] = LTspice's specific for A-devices, helps with noise, default 0;
+* tripdt  [s] = LTspice's specific for A-devices, default 0.
+*
+*
+* [NOTES]
+*
+* - Simply connecting an external carrier control doesn't disable the internal
+* oscillator. To avoid having one useless oscillator, disable with f=0.
+* - Can be used in single-phase, 2-level or 3-level modulation, by connecting
+* only one input, while taking care that the outputs are crossed at the bridge.
+* (together with 3lvl_br_vm, for example).
+*
+********************************
+.subckt 3lvl_mod INa INb INc EXT A _A B _B C _C _EN params:
++ vhigh=1.01 vlow=0 Vpk=1 f=2k sym=0.5 dt=1u vh=0 td=1u tripdt=0
++ _sym=limit(sym,1m,999m)
+Aa 0 3 EN 0 0 0 A 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_a 0 0 EN 4 0 0 _A 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+Ab 0 5 EN 0 0 0 B 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_b 0 0 EN 6 0 0 _B 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+Ac 0 7 EN 0 0 0 C 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_c 0 0 EN 8 0 0 _C 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+Aia ina EXT 0 0 0 4 3 0 SCHMITT td={td} vt=0 vh={vh} vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt}
+Aib inb EXT 0 0 0 6 5 0 SCHMITT td={td} vt=0 vh={vh} vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt}
+Aic inc EXT 0 0 0 8 7 0 SCHMITT td={td} vt=0 vh={vh} vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt}
+Aen _EN 0 0 0 0 EN 0.1 0 SCHMITT vt={(Vhigh+Vlow)/2} vh=0 vhigh={Vhigh} vlow={Vlow}
+Vosc EXT 0 pulse {-Vpk} {Vpk} 0 {_sym/f} {(1-_sym)/f} 0 {1/f} rser=1g trigger v(_en)<{(vhigh+vlow)/2}
+Rina ina 0 1G
+Rinb inb 0 1G
+Rinc inc 0 1G
+Ren _EN 0 1G
+.ends 3lvl_mod
+********************************************************************************
+*
+*   3ph_ACMotor - Induction motor
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* -There are two methods: direct -- specify inductances and resistances --, and
+* indirect -- have them calculated, automatically. Both methods make certain
+* assumptions, such as no saturation, air-gap losses negligeable, iron losses
+* being ~3.5% of the total.
+*
+*
+* [SYMBOL]
+*
+* A,B,C = inputs;
+* N     = null;
+* W     = outputs angular frequency, connect external current source to simulate
+*       mechanical loading, Zout=-j/{J};
+* J     = outputs torque, Rout=1.
+*
+*
+* [PARAMETERS]
+*
+* - Common:
+*
+* Zp            = number of poles (2 pairs => Zp=4), default 2;
+* J   [Kg*m^2]  = moment of inertia, should not be zero, default 2.1m.
+*
+* - Direct mode -- ignore the "indirect method" parameters and set these:
+*
+* Lm  [H]       = magnetizing inductance, default 351.05m;
+* Lr  [H]       = rotor's leakage inductance, default 18.8m;
+* Ls  [H]       = stator's leakage inductance, default 26.43m;
+* Rf  [Ohm]     = iron losses equivalent resistance, default 2k;
+* Rr  [Ohm]     = rotor's resistance, default 5.5;
+* Rs  [Ohm]     = stator's resistance, default 7.5.
+*
+* - Indirect mode -- set the "direct method" parameters to zero and set these:
+*
+* Pn  [W]       = shaft's delivered power, default 1.1k;
+* fn  [Hz]      = working frequency, default 50;
+* Vn  [V]       = nominal line-to-line RMS voltage, default 400;
+* In  [A]       = nominal current, automatically calculated if 0, default 2.6;
+* eff           = efficiency, default 0.77;
+* phi [rad]     = displacement factor (cos(phi) actually), default 0.78;
+* slip          = slip factor, default 35m;
+* DY=<0,1>      = delta <0> or wye <1> (default).
+*
+* - Hidden:
+*
+* tripdv,tripdt = LTspice's specific for behavioural sources, default 10V/1us;
+* att           = a minor tweak to ease up the calculations by reducing the
+*               dynamic range, should not be needed, default 1.
+*
+*
+* [CHARACTERISTICS]
+*
+* - .uic may be needed for the simulation command.
+*
+********************************
+.subckt 3ph_ACMotor a b c N W J params: Zp=2 J=2.1m
+*** direct method
+.parma Lm=351.05m Lr=18.8m Ls=26.43m Rf=2k Rr=5.5 Rs=7.5
+*** indirect method
+.parma Pn=1.1k fn=50 Vn=400 In=2.6 eff=0.77 phi=0.78 slip=35m DY=1 prc=0.035
+*** calculations for indirect method
+.parma _In=if(In==0,Pn/sqrt(3)/Vn/phi*_DY,In) _DY=if(DY,1,sqrt(3))
++ Zeq=Vn/_In Req=Zeq*phi sigma=(1-phi)/(1+phi) Re=Pn*slip/1/(1*slip)/_In**2
++ _Lm=Zeq/2/pi/fn/sqrt(sigma)*1+0*Vn/sqrt(3)/2/pi/fn/_In _Ls=0.3*sigma*_Lm
++ _Lr=_Ls*(1-slip) _Rs=Re*slip*2 _Rr=_Rs*(1-slip) _Rf=Vn/_In/prc
+*** final parameters for elements
+.param Lm_=if(Lm==0,_Lm,Lm) Ls_=if(Ls==0,_Ls,Ls) Lr_=if(Lr==0,_Lr,Lr)
++ Rf_=if(Rf==0,_Rf,Rf) Rs_=if(Rs==0,_Rs,Rs) Rr_=if(Rr==0,_Rr,Rr)
+*** don't like it, but local .ic is better than global uic
+* it shouldn't with normal sine inputs, but comment this if it causes trouble
+.ic v(ds)=0 v(qs)=0 v(iQr)=0 v(iDr)=0
+*** input
+Fa a N Lds 1
+Ra a N 1Meg
+Fbd b N Lds -0.5
+Fbq b N Lqs {sqrt(3)/2}
+Rb b N 1Meg
+Fcd c N Lds -0.5
+Fcq c N Lqs {-sqrt(3)/2}
+Rc c N 1Meg
+*** dq transformation
+* d
+Gab 0 Ds a b {1/3/Rs_}
+Gac 0 Ds a c {1/3/Rs_}
+Rds Ds 0 {Rs_}
+Lds Ds D {Ls_} Rser=0 Rpar=0 Cpar=0
+Ldm D 0 {Lm_} Cpar=0 Rpar={Rf_} Rser=0
+Ldr Dr D {Lr_} Rser=0 Rpar=0 Cpar=0
+Ad 0 idtQr 0 w 0 0 Dr 0 ota vhigh=1g vlow=-1g rout={Rr_} g={Zp/Rr_} linear
+GidtDr 0 idtDr Dr 0 1
+CidtDr idtDr 0 1 rpar=1g ; ic=0
+* q
+Gq 0 Qs b c {1/sqrt(3)/Rs_}
+Rqs Qs 0 {Rs_}
+Lqs Qs Q {Ls_} Rser=0 Rpar=0 Cpar=0
+Lqm Q 0 {Lm_} Cpar=0 Rpar={Rf_} Rser=0
+Lqr Qr Q {Lr_} Rser=0 Rpar=0 Cpar=0
+As 0 idtDr w 0 0 0 Qr 0 ota vhigh=1g vlow=-1g rout={Rr_} g={Zp/Rr_} linear
+GidtQr 0 idtQr Qr 0 1
+CidtQr idtQr 0 1 rpar=1g ; ic=0
+*** torque
+Hdm Idm 0 Ldm -1
+Hqm Iqm 0 Lqm -1
+Hdr Idr 0 Ldr 1
+Hqr Iqr 0 Lqr 1
+A_dm_qr 0 Idm Iqr 0 0 0 j 0 ota vhigh=1g vlow=-1g rout=1 g={3/2*Zp*Lm_} linear
+A_qm_dr Iqm 0 Idr 0 0 0 j 0 ota vhigh=1g vlow=-1g g={3/2*Zp*Lm_} linear
+*** angular speed
+Gw 0 w j 0 1
+Cj w 0 {J} Rpar=1meg ic=0
+.ends 3ph_ACMotor
+********************************************************************************
+*
+*   3ph_br_cm, 3ph_br_vm - Three-phase switching bridges
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* INa,_INa,INb,_INb,INc,_INc  = complementary logic inputs, Rin=1G;
+* DC+,DC-                     = DC supply;
+* A,B,C                       = three-phase outputs.
+*
+*
+* [PARAMETERS]
+*
+* Ron,Roff  [Ohm]   = on-/off-state resistances, defaults <100m,10meg>;
+* Vfwd      [V]     = diode forward voltage drop, default 0.7;
+* Vrev      [V]     = diode reverse breakdown voltage, default 1k;
+* Rs,Cs     [Ohm,F] = series snubber across each device, defaults <1meg,100p>.
+*
+* - Hidden:
+*
+* vt  [V] = input logic threshold, default 0.5;
+* vh  [V] = LTspice's specific for SW level=1, best keep negative, default -0.5.
+*
+*
+* [NOTES]
+*
+* - There's no dead-time so it should be supplied externally.
+* - Can be used in single-phase applications, too.
+*
+********************************
+*
+*     Current-mode
+*
+********************************
+.subckt 3ph_br_cm  INa _INa  INb _INb  INc _INc A B C DC+ DC- params:
++ Ron=100m Roff=10meg Vfwd=0.7 Vrev=1k Rs=1meg Cs=100p vt=0.5 vh=-0.5
+Sa DC+ 1 INa 0 SW
+Das A 1 Dd
+Ca DC+ A {Cs} Rser={Rs}
+S_a A 4 _INa 0 SW
+D_as DC- 4 Dd
+C_a A DC- {Cs} Rser={Rs}
+Sb DC+ 3 INb 0 SW
+Dbs B 3 Dd
+Cb DC+ B {Cs} Rser={Rs}
+S_b B 6 _INb 0 SW
+D_bs DC- 6 Dd
+C_b B DC- {Cs} Rser={Rs}
+Sc DC+ 5 INc 0 SW
+Dcs C 5 Dd
+Cc DC+ C {Cs} Rser={Rs}
+S_c C 2 _INc 0 SW
+D_cs DC- 2 Dd
+C_c C DC- {Cs} Rser={Rs}
+Dcs1 DC+ 5 Dd
+Dcs2 DC+ 3 Dd
+Dcs3 DC+ 1 Dd
+Dcs4 A 4 Dd
+Dcs5 B 6 Dd
+Dcs6 C 2 Dd
+Ra INa 0 1G
+Rb INb 0 1G
+Rc INc 0 1G
+R_a _INa 0 1G
+R_b _INb 0 1G
+R_c _INc 0 1G
+.model sw sw Ron={Ron/2} Roff={Roff/2} vt={vt} vh={vh}
+.model dd d vfwd={Vfwd} Ron={Ron/2} Roff={Roff/2} Vrev={Vrev} epsilon={0.1*Vfwd} revepsilon={0.05*Vfwd}
+.ends 3ph_br_cm
+********************************
+*
+*     Voltage-mode
+*
+********************************
+.subckt 3ph_br_vm  INa _INa  INb _INb  INc _INc A B C DC+ DC- params:
++ Ron=100m Roff=10meg Vser=0 Vfwd=0.7 Vrev=1k Rs=1meg Cs=100p vt=0.5 vh=-0.5
+Sa A DC+ INa 0 SW
+Da A DC+ Dd
+Ca DC+ A {Cs} Rser={Rs}
+S_a DC- A _INa 0 SW
+C_a A DC- {Cs} Rser={Rs}
+Sb B DC+ INb 0 SW
+Cb DC+ B {Cs} Rser={Rs}
+S_b DC- B _INb 0 SW
+C_b B DC- {Cs} Rser={Rs}
+Sc C DC+ INc 0 SW
+Cc DC+ C {Cs} Rser={Rs}
+S_c DC- C _INc 0 SW
+C_c C DC- {Cs} Rser={Rs}
+D_a DC- A Dd
+Db B DC+ Dd
+D_b DC- B Dd
+Dc C DC+ Dd
+D_c DC- C Dd
+Ra INa 0 1G
+Rb INb 0 1G
+Rc INc 0 1G
+R_a _INa 0 1G
+R_b _INb 0 1G
+R_c _INc 0 1G
+.model sw sw Ron={Ron} Roff={Roff} vt={vt} vh={vh} vser={Vser}
+.model dd d vfwd={Vfwd} Vrev={Vrev} Ron={Ron} Roff={Roff} epsilon={0.1*Vfwd} revepsilon={0.05*Vfwd}
+.ends 3ph_br_vm
+********************************************************************************
+*
+*   3ph_gen - Three-phase harmonic generator
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - Symmetrical/asymmetrical, odd/even harmonics generator, true until 51st, can
+* be voltage or current. It has general and separate amplitude, offset and phase
+* setting, per harmonic divizor exponent, spectrum shaping and up to three
+* harmonics to be added/subtracted separate from the rest.
+*
+*
+* [SYMBOL]
+*
+* 1,2,3     = outputs of the three phases.
+* NUL       = the common for the Y-shaped generators;
+* FM,AM,PM  = external control of amplitude, frequency ahd phase,, Rin=1G
+*
+* - 'FM', 'AM', and 'PM' pins must be referenced to the 'NUL' pin!
+* - 'NUL' can be grounded or floating, but for the latter there may be cases
+* where a high-valued resistance or capacitor may be needed.
+*
+*
+* [PARAMETERS]
+*
+* sym=<0,1>       = sym=0 => sin(N*w*t + phi)
+*                   sym=1 => sin(N*w*t + N*phi) (default);
+* f         [Hz]  = fundamental frequency, default 50;
+* amp       [V]   = amplitude of the fundamental, default 325;
+* phi       [rad] = phase displacement for the harmoncs (only), default 0;
+* Ro        [Ohm] = output resistance, 0 means current generator, default 1;
+* N=+/-<0:51>     = sets the number of harmonics:
+*                   - N>0, odd   => odd harmonics, only;
+*                   - N>0, even  => even harmonics, only;
+*                   - N<0        => odd+even harmonics.
+* DC[1:3]   [V]   = per-phase offset, defaults <0,0,0>;
+* A[1:3]    [V]   = per-phase p.u. amplitude, defaults <1,1,1>;
+* phi[1:3]  [rad] = fundametal's per-phase displacement, defaults <0,0,0>;
+* h[1:3]          = up to three user selected harmonics to be added/subtracted:
+*                   - subtracts number <h[x]'s value> harmonic if present
+*                   - adds number <h[x]'s value> harmonic if not present
+*               This will be done obeying the spectrum's shape. E.g.: for N=0,
+*               f=1, h1=100, default for the rest => 10mVpk 100Hz output.
+*               Defaults <0,0,0>;
+* a,b,c,d,e,p,q,xp,xq,ma,mb = terms for the harmonics levels (see below),
+*               defaults <0,0,0,0,0,1,0,1,1,0,0>;
+*
+* - Hidden:
+*
+* tripdv,tripdt = LTspice's characteristic for B-sources, default 100/1u.
+* lim           = internal limit to avoid clipping, default 1G.
+*
+*
+* [CHARACTERISTICS]
+*
+* - Anything connected to pins 'FM' and 'AM' overrides the internal settings.
+* This is not true for 'PM'. The general displacement, though, is given by
+* V(PM)+phase, where "phase" is either {phi} (for harmonics) or {phi[1:3]} (for
+* fundamental).
+* - The harmonics are generated from a sin/cos basis, with signum control, using
+* the parameters {a}, {b}, {c}, {d}, {e}, {p}, {q}, {xp}, {xq}, {ma}, and {mb}:
+*
+*     x(t) = h[n] * sin(n*wt + phi) * s[n]
+*
+*             a*sin(pi*n*b + c) + cos(pi*n*d + e)
+*     h[n] = -------------------------------------
+*                 pwr(p*pwr(n, xp) + q, xq)
+*
+*     s[n] = sgn(mod(n + ma + 0.5, mb) - 1)
+*
+* s[n] sets the signum on a cycle basis, where {mb} determines the period, and
+* {ma} the offset. mb=0 means the signum is 1, mb=1 means -1. The fundamental is
+* not affected. Here are the outputs, from the second harmonic up, for various
+* settings (low means -1 and high means 1):
+*
+*     |    |                  1 1 1 1 1
+*  ma | mb |  2 3 4 5 6 7 8 9 0 1 2 3 4 ...
+* ----+----+-------------------------------
+*     |    |    _   _   _   _   _   _
+*  0  | 2  |   | | | | | | | | | | | |
+*     |    |  _| |_| |_| |_| |_| |_| |_
+* ~~~~+~~~~+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     |    |  _   _   _   _   _   _   _
+*  1  | 2  |   | | | | | | | | | | | |
+*     |    |   |_| |_| |_| |_| |_| |_|
+* ~~~~+~~~~+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     |    |    _._   _._   _._   _._
+*  1  | 3  |   |   | |   | |   | |   |
+*     |    |  _|   |_|   |_|   |_|   |_
+* ~~~~+~~~~+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     |    |  _   _._._._   _._._._   _
+*  2  | 5  |   | |       | |       | |
+*     |    |   |_|       |_|       |_|
+* ~~~~+~~~~+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*     |    |    _._._._._   _._._._._
+*  4  | 6  |   |         | |         |
+*     |    |  _|         |_|         |_
+*
+* Non-integer values also work.
+*
+*
+* [NOTES]
+*
+* - A few settings to achieve some known waveforms:
+*
+*  wave |   N  | a |  b  |   c   |  d  |  e   | p | q | xp | xq | ma | mb
+* ------+------+---+-----+-------+-----+------+---+---+----+----+----+----
+*   1   | 2n+1 | 0 |  0  |   0   |  0  |  0   | 1 | 0 | 1  | 1  | #  | #
+*   2   |+/-2n | 0 |  0  |   0   |  0  |  0   | 1 | 0 | 1  | 1  | #  | #
+*   3   | 2n+1 | 0 |  ~  |   ~   |  x  |  0   | 1 | 0 | 1  | 1  | #  | #
+*   4   | 2n+1 | 0 |  0  |   0   | 1/x |-pi/2 | 1 | 0 | 2  | 1  | #  | #
+*   5   | 2n+1 | 0 |  0  |   0   | 1/2 |-pi/4 | 1 | 0 | 1  | 1  | #  | #
+*   6   | 2n+1 | 0 |  0  |   0   | 1/x |-pi/2 | 1 | 0 | 0  | 1  | #  | #
+*   7   | 2n+1 | 1 |  2  | -pi/x |  y  |  0   | 1 | 0 | 1  | 1  | #  | #
+*   8   |  ~   |1.7| 0.1 | -0.3  |0.23 | 0.1  | 1 | 0 | 1  | 1  |1.62|3.14
+*     [~ means "don't care"]
+*     [# means the ones listed below are for both zero, but variations are
+*      possible for mb>1]
+* 1 = square wave (amp=4/pi for unity);
+* 2 = reverse sawtooth, double-period; for single-period, set N=-2n, for zero
+*   starting sawtooth set d=1/2 and p=-1/2 (N=+/-2n).
+* 3 = UPS square sine, variable width x=(0+..0.5-);
+* 4 = trapezoidal, fixed slope, variable amplitude x (x=2 => triangular);
+* 5 = Hilbert transform of a square wave;
+* 6 = (x=2) alternating single, or (x>2) variably spaced alternating double sinc
+*   impulses;
+* 7 = two-steps square sine, x=(1+..2-) varies lower step's amplitude,
+*   y=(0+..0.5-) - upper step's width;
+* 8 = lightning.
+*
+************************************************
+.subckt 3ph_gen 1 2 3 NUL FM AM PM params:
++ sym=1 f=50 amp=325 phi=0 Ro=1 N=-51
++ dc1=0 dc2=0 dc3=0 A1=1 A2=1 A3=1
++ h1=0 h2=0 h3=0 phi1=0 phi2=0 phi3=0
++ a=0 b=0 c=0 d=0 e=0 p=1 q=0 xp=1 xq=1 ma=0 mb=0
+*** helpers
+.param Rout=if(Ro==0, 1g, Ro) Rx=Rout**u(Ro) lim=1g off=2*pi/3 ampl=amp**u(amp) parN=(par(N) & N) absN=abs(N)
+*** functions
+* base sine
+.func base(x,y) {sin(x*v(idt)+y)}
+* fundamental
+.func fund(x,y) {if(x==0 | parN, 0, spec(x)*base(x,(v(PM)+y)*x**sym))}
+* base harmonic
+.func harm(x,y) {if( x==0 | x>absN, 0, spec(x)*base(x,(v(PM)+y)*x**sym) )}
+* spectrum control
+.func sign(x) {if(mb>0, sgn(mod(x+ma+0.5,mb)-1), 1)}
+.func spec(x) {(a*sin(pi*x*b+c)+cos(pi*x*d+e))/(p*x**xp+q)**xq*sign(x)}
+* helpers
+.func mod(x,y) {x-int(x/y)*y}
+.func par(x) {x/2==int(x/2)}
+.func fundPhi(x,y) {if(x==1, y, phi)}
+* sum of harmonics
+.func harmOdd(y) {if(parN,0,harm(3,y)+harm(5,y)+harm(7,y)+harm(9,y)+
++ harm(11,y)+harm(13,y)+harm(15,y)+harm(17,y)+harm(19,y)+harm(21,y)+
++ harm(23,y)+harm(25,y)+harm(27,y)+harm(29,y)+harm(31,y)+harm(33,y)+
++ harm(35,y)+harm(37,y)+harm(39,y)+harm(41,y)+harm(43,y)+harm(45,y)+
++ harm(47,y)+harm(49,y)+harm(51,y) )}
+.func harmEven(y) {if(par(N+1)&N, 0, harm(2,y)+harm(4,y)+harm(6,y)+harm(8,y)+
++ harm(10,y)+harm(12,y)+harm(14,y)+harm(16,y)+harm(18,y)+harm(20,y)+
++ harm(22,y)+harm(24,y)+harm(26,y)+harm(28,y)+harm(30,y)+harm(32,y)+
++ harm(34,y)+harm(36,y)+harm(38,y)+harm(40,y)+harm(42,y)+harm(44,y)+
++ harm(46,y)+harm(48,y)+harm(50,y) )}
+.func harmSum(y) {harmEven(y)+harmOdd(y)}
+*** very difficult to do without B-sources
+Ba nul _a i=fund(1,phi1)+harmSum(phi)-fund(h1,fundPhi(h1,phi1))-
++ fund(h2,fundPhi(h2,phi1))-fund(h3,fundPhi(h3,phi1)) Rpar=1 ; tripdv={tripdv} tripdt={tripdt}
+Bb nul _b i=fund(1,phi2-off)+harmSum(phi-off)-fund(h1,-off+fundPhi(h1,phi2))-
++ fund(h2,-off+fundPhi(h2,phi2))-fund(h3,-off+fundPhi(h3,phi2)) Rpar=1 ; tripdv={tripdv} tripdt={tripdt}
+Bc nul _c i=fund(1,phi3+off)+harmSum(phi+off)-fund(h1,off+fundPhi(h1,phi3))-
++ fund(h2,off+fundPhi(h2,phi3))-fund(h3,off+fundPhi(h3,phi3)) Rpar=1 ; tripdv={tripdv} tripdt={tripdt}
+Aa nul _a AM 0 nul nul 1 nul ota vhigh={lim} vlow={-lim} rout={Rout} ref={dc1/ampl/A1} g={A1/Rx} linear
+Ab nul _b AM 0 nul nul 2 nul ota vhigh={lim} vlow={-lim} rout={Rout} ref={dc2/ampl/A2} g={A2/Rx} linear
+Ac nul _c AM 0 nul nul 3 nul ota vhigh={lim} vlow={-lim} rout={Rout} ref={dc3/ampl/A3} g={A3/Rx} linear
+Vam AM 0 {amp} Rser=1g
+Vfm FM 0 {f} Rser=1g
+Gfm 0 idt FM 0 1
+Cfm idt 0 {0.5/pi} Rser=0 Rpar=1g Cpar=0 ic=0
+Rpm PM 0 1g
+.ends 3ph_gen
+********************************************************************************
+*
+*       3ph_LC - three-phase LC lowpass, delta or wye
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* 11,12,13  = inputs;
+* 21,22,23  = outputs;
+* -1        = null.
+*
+* [PARAMETERS]
+*
+* L,C [H,F] = LC lowpass, defaults <1m,1u>;
+* DY=<0,1>  = selects between delta connection for the output capacitors (0), or
+*           wye (1, default);
+* k=<-1..1> = coupling factor, default 0.
+*
+* - Hidden:
+*
+* RLser,RLpar,RCser,RCpar [Ohm] = series and parallel parasitics for L and C,
+*                               can be zero, defaults <100m,100k,100m,1meg>.
+*
+********************************
+.subckt 3ph_LC 11 12 13 21 22 23 -1 params: L=1m C=1u DY=1 k=0 RCser=100m RLser=100m RCpar=1meg RLpar=100k
+L1 11 21 {L} Rser={RLser} Rpar={RLpar}
+L2 12 22 {L} Rser={RLser} Rpar={RLpar}
+L3 13 23 {L} Rser={RLser} Rpar={RLpar}
+K L1 L2 L3 {k}
+C1 21 {if(DY,-1,22)} {C} Rser={RCser} Rpar={RCpar}
+C2 22 {if(DY,-1,23)} {C} Rser={RCser} Rpar={RCpar}
+C3 23 {if(DY,-1,21)} {C} Rser={RCser} Rpar={RCpar}
+.ends 3ph_LC
+********************************************************************************
+*
+*       3ph_snub - three-phase series RC snubber, delta or wye connection
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* 1,2,3   = inputs;
+* 4       = common.
+*
+* [PARAMETERS]
+*
+* R,C   [Ohm,F] = series RC snubber, defaults <100,1n>;
+* DY=<0,1>      = Selects between delta (0) or wye  (1, default) connection.
+*
+* - Hidden:
+*
+* Rpar  [Ohm]   = LTspice's specific for capacitors, default 1meg.
+*
+*
+* [NOTES]
+*
+* - It can have any of the two elements null, but not both at the same time.
+*
+********************************
+.subckt 3ph_snub 1 2 3 4 params: R=100 C=1n DY=1 Rpar=1meg
+C1 1 {if(DY,4,2)} {C} Rser={R} Rpar={Rpar}
+C2 2 {if(DY,4,3)} {C} Rser={R} Rpar={Rpar}
+C3 3 {if(DY,4,1)} {C} Rser={R} Rpar={Rpar}
+.ends 3ph_snub
+********************************************************************************
+*
+*       3ph_SW - Controllable three-phase switch
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - Three-phase glorified multiplexer.
+*
+*
+* [SYMBOL]
+*
+* A1,B1,C1  = first channel;
+* A2,B2,C2  = second channel;
+* A, B, C   = common channel;
+* CTL       = external switching control, Rin=1G. Anything connected to this pin
+*           overrides internal clock.
+*
+*
+* [PARAMETERS]
+*
+* Ron,Roff  [Ohm] = resistances for the series switches, defaults <1m,1Meg>;
+* ON,OFF    [s]   = internal clock. T={ON+OFF}, Ton={ON}, it starts {ON},
+*                 defaults <0.25,0.3>.
+*
+* - Hidden:
+*
+* ref [V] = threshold for the external logic control, default 0.5;
+* tr  [s] = rise time for the internal logic. It's the time constant for a
+*         lowpass RC response to a step, tau=tr/5, default min(ON,OFF)/1k.
+*
+********************************
+.subckt 3ph_SW A1 B1 C1 A2 B2 C2 A B C CTL params: Ron=1m Roff=1Meg ON=0.25 OFF=0.3
++ ref=0.5 tr=min(ON,OFF)*1m
+S11 A A1 q 0 SW1
+S12 B B1 q 0 SW1
+S13 C C1 q 0 SW1
+S21 A A2 _q 0 SW2
+S22 B B2 _q 0 SW2
+S23 C C2 _q 0 SW2
+.model sw1 sw(Ron={Ron} Roff={Roff} vt={0.6} vh={-0.4})
+.model sw2 sw(Ron={Ron} Roff={Roff} vt={0.6} vh={-0.4})
+Vctl ctl 0 pulse(1 0 {ON} {tr} {tr} {OFF*(1-tr)} {ON+OFF}) rser=1g
+Actl ctl 0 0 0 0 _q q 0 BUF ref={ref} tau={tr/5}
+.ends 3ph_SW
+********************************************************************************
+*
+*       BrdgRect, BrdgRectThy - Rectifying bridges
+*
+********************************************************************************
+********************************
+*
+*     Fixed (no) angle
+*
+********************************
+*
+* [SYMBOL]
+*
+* A,B,C   = AC input pins;
+* +,-     = DC output pins;
+*
+* [PARAMETERS]
+*
+* Ron,Roff  [Ohm]   = on-/off-state resistances, defaults <100m,10Meg>;
+* Vfwd,Vrev [V]     = forward/reverse voltage drop, defaults <0.7,1k>;
+* Rs,Cs     [Ohm,F] = series RC snubber across diodes, defaults <1meg,1n>.
+*
+*
+* [NOTES]
+*
+* - The series RC snubber can have any of the two elements null, but not both at
+* the same time.
+*
+********************************
+.subckt BrdgRect A B C + - params: Vfwd=0.7 Vrev=1k Ron=100m Roff=10meg Rs=1meg Cs=1n
+D1 A + D
+C1 + A {Cs} Rser={Rs}
+D2 B + D
+C2 + B {Cs} Rser={Rs}
+D3 C + D
+C3 + C {Cs} Rser={Rs}
+D4 - A D
+C4 A - {Cs} Rser={Rs}
+D5 - B D
+C5 B - {Cs} Rser={Rs}
+D6 - C D
+C6 C - {Cs} Rser={Rs}
+.model d d Ron={Ron} Roff={Roff} Vfwd={Vfwd} Vrev={Vrev} epsilon={0.1*Vfwd} revepsilon={0.05*Vfwd}
+.ends BrdgRect
+************************************************
+*
+*     Fixed (no) angle, SW instead of D
+*
+************************************************
+*
+* [SYMBOL]
+*
+* A,B,C   = AC input pins;
+* +,-     = DC output pins;
+*
+* [PARAMETERS]
+*
+* Ron,Roff  [Ohm] = off-state resistance, defaults <100m,10Meg>;
+* lvl=<1,2>       = selects the level of the VCSW, default 2;
+* Vfwd      [V]   = forward voltage drop, default 0.7.
+*
+* Hidden:
+*
+* lim       [A]   = current limit for level=2 VCSW, default 1k.
+*
+*
+* [NOTES]
+*
+* - For level 2 switches, Vser>0 is equivalent to "oneway" flag.
+*
+********************************
+.subckt BrdgRect2 A B C + - params: Vfwd=0.7 Ron=100m Roff=10meg lim=1k lvl=2
++ dummy=table( int(lvl), 1, 1, 2, 2)
+Sd1 + A A + Di
+Sd2 C - - C Di
+Sd3 + B B + Di
+Sd4 A - - A Di
+Sd5 + C C + Di
+Sd6 B - - B Di
+.model Di sw vt={Vfwd*.5} vh={-Vfwd*if(dummy==1,0.5,0.5m)} Ron={Ron} Roff={Roff} vser={Vfwd} level={dummy} ilimit={lim}
+.ends BrdgRect2
+********************************
+*
+*     Controlled angle
+*
+********************************
+*
+* [SYMBOL]
+*
+* A,B,C   = AC input pins;
+* +,-     = DC output pins;
+* S[1:6]  = BUS pin(!) for external firing angle logic, floating;
+* _EN     = external _enable/disable pin, 1G internal pulldown.
+*
+* [PARAMETERS]
+*
+* Ron,Roff  [Ohm] = on/off resistances, defaults <100m,10Meg>;
+* lvl=<1,2>       = selects the level for VCSW, default 1;
+* Vser      [V]   = forward voltage drop, default 1;
+* f         [Hz]  = working frequency, default 50;
+* phi       [rad] = phase displacement, default 0;
+* ang       [rad] = firing angle, default -pi/5.
+*
+* - Hidden:
+*
+* ref       [V] = input logic threshold, default 0.5;
+* lim       [A] = current limit for level 2 switches, default 1G;
+* vt,vh     [V] = threshold and hysteresis voltages for switches, directly
+*               linked to {dt}, defaults <0.5,0.5> for level 1, and <0.5,0.5m>
+*               for level 2;
+* dt        [s] = dead-time, default 1us;
+* td        [s] = total delay time for logic, default 1u;
+* tripdt    [s] = LTspice's specific for A-devices, default 0.
+*
+*
+* [CHARACTERISTICS]
+*
+* - The indices for the external firing control denotes the order in which the
+* thyristors conduct, so the complementary pairs should be 1/_4, 3/_6, 5/_2.
+* - If external control is not used, the firing angle is generated based on {f},
+* {phi} and {ang}: {f} sets the working frequency, {phi} the displacement and
+* {ang} the firing angle.
+*
+*
+* [NOTES]
+*
+* - Sometimes, when external control is used, the first pulse is skipped.
+* - The external control can be done with very narrow pulses.
+*
+********************************
+.subckt BrdgRectThy  A B C + - s[1] s[2] s[3] s[4] s[5] s[6] _EN params:
++ f=50 phi=0 ang=-pi/5 Ron=100m Roff=10meg Vser=1 dt=1u td=1u ref=0.5 tripdt=0 lvl=1 lim=1g
+*** helpers
+.param vt=0.35 vh={-if(level==1,0.5,1m)} level=table(int(lvl), 1, 1, 2, 2)
+*** "thyristors"
+S1 + a 1 0 scr
+S2 c - 2 0 scr
+S3 + b 3 0 scr
+S4 a - 4 0 scr
+S5 + c 5 0 scr
+S6 b - 6 0 scr
+.model scr sw ron={Ron} roff={Roff} Vser={Vser} vt={vt} vh={vh} level={level} ilimit={lim}
+*** internal angle reference
+Va aref 0 sin 0 1 {f} 0 0 {(phi+ang)*180/pi}
+Vb bref 0 sin 0 1 {f} 0 0 {(phi+ang)*180/pi-120}
+Vc cref 0 sin 0 1 {f} 0 0 {(phi+ang)*180/pi+120}
+*** conversion to logic levels and interface with the external angle control
+Aina aref 0 0 0 0 s[4] s[1] 0 BUF ref=0 rout=1g
+Ainb bref 0 0 0 0 s[6] s[3] 0 BUF ref=0 rout=1g
+Ainc cref 0 0 0 0 s[2] s[5] 0 BUF ref=0 rout=1g
+*** drivers, SR-flops with two resets
+* A1
+.mach tripdt={tripdt}
+.state s0 0
+.state s1 1
+.rule s0 s1 v(s[1])>{ref}
+.rule * s0 v(s[3])>{ref} | v(_EN)>{ref}
+.output (1) state
+.endmach
+* A4
+.mach tripdt={tripdt}
+.state s0 0
+.state s1 1
+.rule s0 s1 v(s[4])>{ref}
+.rule * s0 v(s[6])>{ref} | v(_EN)>{ref}
+.output (4) state
+.endmach
+* A3
+.mach tripdt={tripdt}
+.state s0 0
+.state s1 1
+.rule s0 s1 v(s[3])>{ref}
+.rule * s0 v(s[5])>{ref} | v(_EN)>{ref}
+.output (3) state
+.endmach
+* A6
+.mach tripdt={tripdt}
+.state s0 0
+.state s1 1
+.rule s0 s1 v(s[6])>{ref}
+.rule * s0 v(s[2])>{ref} | v(_EN)>{ref}
+.output (6) state
+.endmach
+* A5
+.mach tripdt={tripdt}
+.state s0 0
+.state s1 1
+.rule s0 s1 v(s[5])>{ref}
+.rule * s0 v(s[1])>{ref} | v(_EN)>{ref}
+.output (5) state
+.endmach
+* A2
+.mach tripdt={tripdt}
+.state s0 0
+.state s1 1
+.rule s0 s1 v(s[2])>{ref}
+.rule * s0 v(s[4])>{ref} | v(_EN)>{ref}
+.output (2) state
+.endmach
+*** terminating resistors for state-machines, with soft-switching
+Cs[1] [1] 0 {dt/5k} rpar=1k
+Cs[2] [2] 0 {dt/5k} rpar=1k
+Cs[3] [3] 0 {dt/5k} rpar=1k
+Cs[4] [4] 0 {dt/5k} rpar=1k
+Cs[5] [5] 0 {dt/5k} rpar=1k
+Cs[6] [6] 0 {dt/5k} rpar=1k
+Ren _EN 0 1g
+.ends BrdgRectThy
+********************************************************************************
+*
+*       Cable - 4-wire cable
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - Inside it's a PI LC low-pass with two R at the input/output. It uses some
+* approximations and many simplifications but, for not so large powers, it is a
+* fairly good model.
+*
+*
+* [PARAMETERS]
+*
+* phi   [m]     = wire (equivalent) diameter, default 2m;
+* f     [Hz]    = nominal frequency, default 50;
+* len   [m]     = length of cable, default 20;
+* CuAl=<0,1>    = whether copper (0, default) or aluminium (1) wire is used;
+* T     [C]     = working temperature, default 27;
+* Space [m]     = distance between the exterior of the wires' insulations,
+*               default 5m;
+* Dins  [m]     = diameter with insulation, default 5m;
+* TriPlan=<0,1> = whether the wires are disposed in triangle (0) or planar
+*               formation (1, default).
+*
+* - Hidden:
+*
+* ratio=<0..0.5>    = determines the distribution of the series resistance
+*                 between the ending Rs and PI's middle L: 0.5 (default) means
+*                 the resistances at the ends get 1/2 of the value, each, while
+*                 the inductance has none; 0 means L gets all the resistance
+*                 while the ending resistors none;
+* RparL,RparC [Ohm] = LTspice's specific for inductances and capacitances,
+*                 default 100*reactance, each.
+*
+*
+* [CHARACTERISTICS]
+*
+* - If not all the wires are used, ground only one of the inputs/outputs of each
+* unused ones. e.g.: if the null is unused, ground one of the two empty pins and
+* leave the other floating.
+* - ratio=0.5 may prove to be faster in some .TRAN applications, but it's there
+* for experimenting. 
+*
+********************************
+.subckt Cable 11 21 31 41 10 20 30 40 params:
++ phi=2m f=50 len=20 CuAl=0 T=27 Space=5m Dins=5m TriPlan=1 ratio=0.5 RparC=100*XC RparL=100*XL
+.param Rdc=rho/Aw*(1+alpha*(T-20)) rhoCu=17.241n rhoAl=28.264n rho=if( CuAl==1,rhoCu,rhoAl )
+.param alphaCu=3.93m alphaAl=4.03m alpha=if(CuAl==1,alphaCu,alphaAl) Aw=pi*phi**2/4
+.param Rac=Rdc*(1+ys+yp2) Rac2=Rdc*(1+ys+yp) xs=0.8u*pi*f/Rdc ys=xs**2/(192+0.8*xs**2)
+.param yp=xp**2/(192+0.8*xp**2)*(phi/_Space)**2*2.9
+.param yp2=xp**2/(192+0.8*xp**2)*(phi/_Space)**2*(0.312*(phi/_Space)**2+1.18*(192+0.8*xp**2)/xp**2+0.27)
+.param xp=0.8u*pi*f/Rdc _Space=1.26**TriPlan*(Space+phi+Dins/2)
+.param XL=2*pi*f*L R=Rac*len Rn=Rac2*len C=8/(18g*log(_Dins/phi))*len
+.param L=(0.05+0.2*log(2*_Space/phi))*len*1u _Dins=if(Dins<=phi,phi,Dins) XC=1/2/pi/f/C
+Ra1 {u(ratio)*90+11} 11 {R*ratio**u(ratio)}
+Rb1 {u(ratio)*180+21} 21 {R*ratio**u(ratio)}
+Rc1 {u(ratio)*270+31} 31 {R*ratio**u(ratio)}
+Rn1 41 401 {Rn*ratio**u(ratio)}
+Ra2 {u(ratio)*92+10} 10 {R*ratio**u(ratio)}
+Rb2 {u(ratio)*182+20} 20 {R*ratio**u(ratio)}
+Rc2 {u(ratio)*272+30} 30 {Rn*ratio**u(ratio)}
+Rn2 40 402 {Rn*ratio**u(ratio)}
+Ca1 {u(ratio)*90+11} {u(ratio)*360+41} {C/2} Rser=0 Rpar={RparC} Cpar=0 Lser=0 RLshunt=0 ic=0
+Ca2 {u(ratio)*92+10} {u(ratio)*362+40} {C/2} Rser=0 Rpar={RparC} Cpar=0 Lser=0 RLshunt=0 ic=0
+Cb1 {u(ratio)*180+21} {u(ratio)*360+41} {C/2} Rser=0 Rpar={RparC} Cpar=0 Lser=0 RLshunt=0 ic=0
+Cb2 {u(ratio)*182+20} {u(ratio)*362+40} {C/2} Rser=0 Rpar={RparC} Cpar=0 Lser=0 RLshunt=0 ic=0
+Cc1 {u(ratio)*270+31} {u(ratio)*360+41} {C/2} Rser=0 Rpar={RparC} Cpar=0 Lser=0 RLshunt=0 ic=0
+Cc2 {u(ratio)*272+30} {u(ratio)*362+40} {C/2} Rser=0 Rpar={RparC} Cpar=0 Lser=0 RLshunt=0 ic=0
+La {u(ratio)*90+11} {u(ratio)*92+10} {L} Rser={R*(1-2*ratio)} Rpar={RparL} Cpar=0 ic=0
+Lb {u(ratio)*180+21} {u(ratio)*182+20} {L} Rser={R*(1-2*ratio)} Rpar={RparL} Cpar=0 ic=0
+Lc {u(ratio)*270+31} {u(ratio)*272+30} {L} Rser={R*(1-2*ratio)} Rpar={RparL} Cpar=0 ic=0
+Ln 401 402 {L} Rser={Rn*(1-2*ratio)} Rpar={RparL} Cpar=0 ic=0
+.ends Cable
+********************************************************************************
+*
+*     DC_trafo - smal-signal DC transformer with external duty cycle
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* 1,2 = primary inputs;
+* 3,4 = secondary outputs;
+* D   = external duty cycle input, anything connected to it overrides internal
+*     settings for {d}, Rin=1g.
+*
+* [PARAMETERS]
+*
+* Rout  [Ohm] = output resistance, default 1;
+* d=[0..1)    = duty cycle, default 0.5.
+*
+* - Hidden:
+*
+* lim [V] = internal limits to avoid clipping, default 1g.
+*
+********************************
+.subckt DC_trafo 1 2 3 4 D params: Rout=1 d=0.5 lim=1g
+Ain i 2 D 2 2 2 1 2 ota vhigh={lim} vlow={-lim} rout=1g linear
+Aout 4 1 D 4 4 4 o 4 ota vhigh={lim} vlow={-lim} rout={Rout} g={1/Rout} linear
+Vout o 3
+VD D 0 {D} Rser=1g
+HD i 2 Vout 1
+.ends DC_trafo
+********************************************************************************
+*
+*       Disturb - Disturbance signal
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - It's a gaussian bell modulated sine with skew factor given by a tanh(). For
+* a better understanding of the parameters, here's a minor helping graph for the
+* modulating envelope:
+*
+* ^         sigma
+* |       <------>*................
+* |       .    *  .  *           ^
+* |       .   *   .   *          |
+* |       .  *    .    *         | B
+* |       .*      .     *        |
+* |* * * *        .       * * * *V........
+* |     delay     .                 ^
+* |<------------->.                 | A
+* |                                 V
+* +------------------------------------------->
+*
+*
+* [PARAMETERS]
+*
+* A                 = amplitude outside the "bell", default 1;
+* B                 = amplitude of the bell itself, default 0.1;
+* delay [s]         = delay at which the peak of the bell occurs, default 0.5;
+* sigma             = the gaussian distribution factor, here modified to mean
+*                   the start of the bell's height (~1%), default 0.25;
+* xp=<0:inf>        = multiplier for the exponent: exp[-x^(2*xp)], default 1;
+* skew=<-inf..inf>  = the skew factor, default 0;
+* f     [Hz]        = frequency of the modulated sine, default 10;
+* phi   [rad]       = phase of the modulated sine, default 0;
+* sq                = time's exponent for the sine, default 1.
+*
+*
+* [CHARACTERISTICS]
+*
+* - If skew=0, the bell's height is given by {B}, else it starts at {B/2},
+* growing asymptotically towards {B}. The peak will shift and the skewing will
+* be done around the delay point.
+* - The formula for the gaussian bell is modified such that {sigma} determines
+* the distance from center (peak) to the 1% point of the skirt. E.g.: .TRAN 1,
+* delay=0.5 and sigma=0.1 => V(out)@0.4s has 1% of the peak's value.
+* - {sigma} is also proportional to {delay}, e.g. .TRAN 1m, delay=0.5m => if a
+* +/-0.1ms bell width is wanted, sigma=0.1m.
+* - {xp} sets a sharper bell shape with inflexion points around delay+/-sigma.
+* - {sq} is a crude way of squaring/square rooting the time quantity on the sine
+* function in order to give a time sweep without too much speed penalty.
+* 
+*
+* [NOTES]
+*
+* - If only the bell shape is needed, set phi=pi/2 and sq=0 (skew=0).
+* - Output resistance is {A}.
+*
+********************************
+.subckt disturb out params: A=1 B=0.1 delay=0.5 sigma=0.25 xp=1 skew=0 f=10 phi=0 sq=1
+.func gauss(x) {exp( -4.60517*((x - delay)/sigma)**(2*xp) )}
+.func skewer(x) {if(skew, tanh(x*skew/delay-skew)+1, 1)}
+B1 0 out i=1+B/A*gauss(time)*sin(2*pi*f*time**sq+phi)*skewer(time) Rpar={A}
+.ends disturb
+********************************************************************************
+*
+*       Hysteresis modulator, single-phase
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN    = reference input, floating;
+* CMP   = feedback signal, floating;
+* Q,_Q  = complementary logic outputs, Rout=1;
+* ER    = external error control, anything connected to it overrides internal
+*       setting, Rin=1G;
+* _EN   = _enable/disable pin, Rin=1G.
+*
+*
+* [PARAMETERS]
+*
+* Vhigh,Vlow  [V] = logic levels, defaults <1,0>;
+* err         [V] = error band, default 0.1;
+* dt          [s] = internal dead-time, default 1u;
+* td          [s] = total delay time, default 1u.
+*
+* - Hidden:
+*
+* tripdt      [s] = LTspice's specific for A-devices, default 0.
+*
+********************************************************************************
+.subckt HystComp in cmp Q _Q er _EN params: dt=1u err=0.1 Vhigh=1 Vlow=0 td=1u tripdt=0
+Ge1 in 2 er 0 1
+Ce1 in 2 {dt/10} Rpar=1
+AS 1 cmp 0 0 0 0 a 0 SCHMITT vt=0 vh=0 td={td} vhigh={vhigh} vlow={vlow}
+Ge2 1 in er 0 1
+Ce2 1 in {dt/10} Rpar=1
+AR cmp 2 0 0 0 0 b 0 SCHMITT vt=0 vh=0 td={td} vhigh={vhigh} vlow={vlow}
+ASR a b 0 0 0 4 3 0 SRFLOP vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt} td={td}
+AQ 0 3 5 0 0 0 Q 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_Q 0 4 5 0 0 0 _Q 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_en _EN 0 0 0 0 5 0 0 BUF vhigh={vhigh} vlow={vlow}
+Ren _EN 0 1g
+Verr er 0 {err} Rser=1g
+.ends HystComp
+********************************************************************************
+*
+*       Isense - Current sensor
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* +,-       = current input, Rin=0;
+* out+,out- = output, Rout=1.
+*
+* [PARAMETERS]
+*
+* G = gain, linear, default 1.
+*
+* Hidden:
+*
+* Cout  [F] = optional parallel capacitance for aid in convergence, default 0.
+*
+************************
+*
+*     Current
+*
+************************
+.subckt Isense + - out+ out- params: G=1 Cout=0
+F1 out- out+ v1 {G}
+C1 out+ out- {Cout} Rpar=1
+V1 + - 0
+.ends Isense
+********************************************************************************
+*
+*     RLC - Universal RLC load
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - It's a 3-phase RLC load, wye (with or without null) or delta, series or
+* parallel. It can have any combinations of powers.
+*
+* [PARAMETERS]
+*
+* V   [V]   = line-to-line RMS voltage, default 400;
+* f   [Hz]  = working frequency, default 50;
+* DY=<0,1>  = 0 => delta-connection
+*             1 => wye-connection (default);
+* NUL=<0,1> = if DY=1:
+*             1 => null is present (enables pin 'NUL')
+*             0 => no null;
+* SP=<0,1>  = 0 => series RLC (default)
+*             1 => parallel RLC;
+* P   [W]   = active power;
+* QL  [VAr] = inductive reactive power;
+* QC  [VAr] = capacitive reactive power;
+* Rd  [Ohm] = damping resistor.
+*
+*
+* [CHARACTERISTICS]
+*
+* - "Rd" is only active when a reactive component is directly driven, e.g. the
+* parallel RLC case. Minimum value is 1m, default 1.
+*
+********************************
+.subckt RLC 1 2 3 4 params: V=400 f=50 NUL=1 DY=1 SP=0 P=10k QL=5k QC=2k Rd=1m
+*** helpers
+.param w=2*pi*f N=if(DY==0,0,NUL) m=if(DY==0,sqrt(3),1) U=if(N, V/sqrt(3), V)
+.param S=sqrt( P**2+(QL-QC)**2 )/m I=S/U Pd=Rdamp*I**2 Ud=Rdamp*I Z=if(SP, U**2/S, S/I**2)
+.param R=if(P==0, 1, if( SP, U**2*m**2/P, P/I**2))*3**N
+.param XL=if(SP, U**2*m**2/QL, QL/I**2)*3**N XC=if(SP, U**2*m**2/QC, QC/I**2)*3**N
+.param L=if(QL, XL/w, 1) C=if(QC, 1/w/XC, 1) Ls=if(QL>0 & QC>0 & SP==0, L, 0)
+.param Rsp=if(P>0 & QL==0 & QC>0 & SP, R, 0) Lp=L Rp=if(P>0 & QL>0 & SP, R, 0)
+.param Cp=if(QL>0 & QC>0 & SP, C, 0)
+.param Rps=if(P>0 & QL>0 & QC==0 & SP==0, R, if( QL>0 & QC>0 & SP, 0, Rdamp ))
+.param Rdamp=if((P==0 & ( QL>0 | QC>0 ) & SP==0) | ((QL>0 | QC>0) & SP), Rd, 1m)
+.param Rx=if(QL>0 & QC>0 & SP, Rdamp, R)
+*** node helpers
+.param NC11=if((QC>0 & DY & SP==0) | (QL==0 & QC>0 & DY & SP), 1,
++ if((QC>0 & DY==0 & SP==0) | (QL==0 & QC>0 & DY==0 & SP), 2, 0))
+.param NC10=if((QC>0 & DY & SP==0 & N==0) | (QL==0 & QC>0 & DY & SP & N==0), 5,
++ if((QC>0 & DY & SP==0 & N) | (QL==0 & QC>0 & DY & SP & N), 4,
++ if((QC>0 & DY==0 & SP==0) | (QL==0 & QC>0 & DY==0 & SP), 3, 0)))
+.param NC22=if((QC>0 & SP==0) | (QL==0 & QC>0 & SP), 2, 0)
+.param NC20=if((QC>0 & DY & SP==0 & N==0) | (QL==0 & QC>0 & DY & SP & N==0), 5,
++ if((QC>0 & DY & SP==0 & N) | (QL==0 & QC>0 & DY & SP & N), 4,
++ if((QC>0 & DY==0 & SP==0) | (QL==0 & QC>0 & DY==0 & SP), 1, 0)))
+.param NC33=if((QC>0 & SP==0) | (QL==0 & QC>0 & SP), 3, 0) NC30=NC20
+.param NL11=if((QL>0 & QC>0 & DY & SP) | (QL>0 & QC==0 & DY), 1,
++ if((QL>0 & QC>0 & DY==0 & SP) | (QL>0 & QC==0 & DY==0), 2, 0))
+.param NL10=if((QL>0 & QC==0 & DY & N==0), 5,
++ if((QL>0 & QC==0 & DY & N), 4, if(QL>0 & QC>0 & SP, 10, if(QL>0 & QC==0 & DY==0, 3, 0))))
+.param NL22=if((QL>0 & QC>0 & SP) | (QL>0 & QC==0), 2, 0)
+.param NL20=if((QL>0 & QC==0 & DY & N==0), 5,
++ if((QL>0 & QC==0 & DY & N), 4, if(QL>0 & QC>0 & SP, 20, if(QL>0 & QC==0 & DY==0, 1, 0))))
+.param NL33=if((QL>0 & QC>0 & SP) | (QL>0 & QC==0), 3, 0)
+.param NL30=if((QL>0 & QC==0 & DY & N==0), 5,
++ if((QL>0 & QC==0 & DY & N), 4, if(QL>0 & QC>0 & SP, 30, if(QL>0 & QC==0 & DY==0, 1, 0))))
+.param NR11=if(P>0 & QL==0 & QC==0 & DY, 1,
++ if(P>0 & QL==0 & QC==0 & DY==0, 2, if(QL>0 & QC>0 & SP, 10, 0)))
+.param NR10=if((P>0 & QL==0 & QC==0 & DY & N==0) | (QL>0 & QC>0 & DY & SP & N==0), 5,
++ if((P>0 & QL==0 & QC==0 & DY & N) | (QL>0 & QC>0 & DY & SP & N), 4,
++ if((P>0 & QL==0 & QC==0 & DY==0) | (QL>0 & QC>0 & DY==0 & SP), 3, 0)))
+.param NR22=if(P>0 & QL==0 & QC==0, 2, if(QL>0 & QC>0 & SP, 20, 0))
+.param NR20=if((P>0 & QL==0 & QC==0 & DY & N==0) | (QL>0 & QC>0 & DY & SP & N==0), 5,
++ if((P>0 & QL==0 & QC==0 & DY & N) | (QL>0 & QC>0 & DY & SP & N), 4,
++ if((P>0 & QL==0 & QC==0 & DY==0) | (QL>0 & QC>0 & DY==0 & SP), 1, 0)))
+.param NR33=if(P>0 & QL==0 & QC==0, 3, if(QL>0 & QC>0 & SP, 30, 0))
+.param NR30=NR20 Cs=C Rs=if(P>0 & QC>0 & SP==0, R, Rdamp)
+*** loads
+Ra {NR11} {NR10} {Rx}
+Rb {NR22} {NR20} {Rx}
+Rc {NR33} {NR30} {Rx}
+La {NL11} {NL10} {Lp} Rser={Rps} Rpar={Rp} Cpar={Cp}
+Lb {NL22} {NL20} {Lp} Rser={Rps} Rpar={Rp} Cpar={Cp}
+Lc {NL33} {NL30} {Lp} Rser={Rps} Rpar={Rp} Cpar={Cp}
+Ca {NC11} {NC10} {Cs} Rser={Rs} Lser={Ls} Rpar={Rsp} Cpar=0 RLshunt=0
+Cb {NC22} {NC20} {Cs} Rser={Rs} Lser={Ls} Rpar={Rsp} Cpar=0 RLshunt=0
+Cc {NC33} {NC30} {Cs} Rser={Rs} Lser={Ls} Rpar={Rsp} Cpar=0 RLshunt=0
+*** internal, floating nodes can cause slowdowns
+* node 5 is on
+Rdummy5 5 0 1g
+* if DY=1 & NUL=0, the null is still present, but floating
+Rdummy4 {4*(DY&inv(NUL))} 0 1g
+.ends RLC
+********************************************************************************
+*
+*   Space-vector hysteresis current controller
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* a*,b*,c*        = reference inputs, floating;
+* a, b, c         = feedback inputs, floating;
+* _EN             = _enable/disable, Rin=1G;
+* A,_A,B,_B,C,_C  = complementary logic outputs, Rout=1.
+*
+*
+* [GENERAL]
+*
+* - Simple strategy for minimizing the switchings and the number of logic gates.
+*
+* O1 O2 O3 | I1 I2 I3 | S1 S2 S3
+* -------------------------------
+* 1  0  0  | 1  0  0  | 1  0  0
+*          | 1  1  0  | 1  1  0
+*          | x  x  x  | 0  0  0
+* -------------------------------
+*
+*
+* [PARAMETERS]
+*
+* Vhigh,Vlow  [V] = logic levels, defaults <-1,1>;
+* hi,ho       [V] = inner and outer bands levels, defaults <0.1,0.2>;
+* dt          [s] = internal dead-time, default 1u.
+*
+* - Hidden:
+*
+* td [s]  = total delay time, default 1u;
+* vh [V]  = LTspice's specific for Schmitt triggers, default 0.
+*
+*
+* [NOTES]
+*
+* - Cannot be used in single- or two-phase applications like 3lvl_mod.
+*
+********************************
+.subckt SVHCC ia* ib* ic* ia ib ic Sa _Sa Sb _Sb Sc _Sc _EN params:
++ vhigh=1 vlow=0 td=1u dt=1u hi=0.1 ho=0.2 tripdt=0
+*** hysteresis input
+* A
+Aina2 ia* ia 0 0 0 _o1 o1 0 SCHMITT td={td} vt=0 vh={ho} vhigh={vhigh} vlow={vlow}
+Aina1 ia* ia 0 0 0 _i1 i1 0 SCHMITT td={td} vt=0 vh={hi} vhigh={vhigh} vlow={vlow}
+* B
+Ainb2 ib* ib 0 0 0 _o2 o2 0 SCHMITT td={td} vt=0 vh={ho} vhigh={vhigh} vlow={vlow}
+Ainb1 ib* ib 0 0 0 _i2 i2 0 SCHMITT td={td} vt=0 vh={hi} vhigh={vhigh} vlow={vlow}
+* C
+Ainc2 ic* ic 0 0 0 _o3 o3 0 SCHMITT td={td} vt=0 vh={ho} vhigh={vhigh} vlow={vlow}
+Ainc1 ic* ic 0 0 0 _i3 i3 0 SCHMITT td={td} vt=0 vh={hi} vhigh={vhigh} vlow={vlow}
+*** logic matrix
+* A
+Aa11 _o2 o3 i1 _i2 i3 0 11 0 AND vhigh={vhigh} vlow={vlow}
+Aa12 o1 _o2 i1 _i2 _i3 0 12 0 AND vhigh={vhigh} vlow={vlow}
+Aa13 o1 _o3 i1 i2 _i3 0 13 0 AND vhigh={vhigh} vlow={vlow}
+Aa111 0 11 12 13 0 112 111 0 OR vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt} tripdt={tripdt}
+Aa1 0 111 0 EN 0 0 Sa 0 AND vhigh={vhigh} vlow={vlow} td={td}
+Aa2 0 EN 0 112 0 0 _Sa 0 AND vhigh={vhigh} vlow={vlow} td={td}
+* B
+Ab11 o2 _o3 _i1 i2 _i3 0 21 0 AND vhigh={vhigh} vlow={vlow}
+Ab12 _o1 o2 _i1 i2 i3 0 22 0 AND vhigh={vhigh} vlow={vlow}
+Ab13 o1 _o3 i1 i2 _i3 0 23 0 AND vhigh={vhigh} vlow={vlow}
+Ab111 0 21 22 23 0 212 211 0 OR vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt} tripdt={tripdt}
+Ab1 0 211 0 EN 0 0 Sb 0 AND vhigh={vhigh} vlow={vlow} td={td}
+Ab2 0 EN 0 212 0 0 _Sb 0 AND vhigh={vhigh} vlow={vlow} td={td}
+* C
+Ac11 _o1 o3 _i1 _i2 i3 0 31 0 AND vhigh={vhigh} vlow={vlow}
+Ac12 _o2 o3 i1 _i2 i3 0 32 0 AND vhigh={vhigh} vlow={vlow}
+Ac13 _o1 o2 _i1 i2 i3 0 33 0 AND vhigh={vhigh} vlow={vlow}
+Ac111 0 31 32 33 0 312 311 0 OR vhigh={vhigh} vlow={vlow} trise={2*dt} tfall={tripdt} tripdt={tripdt}
+Ac1 0 311 0 EN 0 0 Sc 0 AND vhigh={vhigh} vlow={vlow} td={td}
+Ac2 0 EN 0 312 0 0 _Sc 0 AND vhigh={vhigh} vlow={vlow} td={td}
+*** external _enable/disable
+Ren _EN 0 1G
+Aen _EN 0 0 0 0 EN 0 0 BUF vhigh={vhigh} vlow={vlow}
+.ends SVHCC
+********************************************************
+*
+*   Space-vector pulse-width modulation
+*
+********************************************************
+*
+* [PARAMETERS]
+*
+* Vhigh,Vlow  [V]   = logic levels, defaults <1,0>;
+* f           [Hz]  = switching frequency, default 2k;
+* sym=<1m..999m>    = sets the symmetry (skewness) of the carrier, trise=a/f,
+*                   tfall=(1-a)/f, default 0.5 (symmetric);
+* a,b=<-1,1>        = sign control of the inputs for internal angle generation,
+*                   defaults <-1,-1>;
+* dt          [s]   = internal dead-time, default 1u;
+* td          [s]   = total delay time, default 1u.
+*
+* - Hidden:
+*
+* vh      [V] = hysteresis for comparators, useful for noisy inputs, default 0;
+* tripdt  [s] = LTspice's specific for A-devices, default 0.
+*
+********************************
+.subckt SVPWM A B Sa _Sa Sb _Sb Sc _Sc _EN params:
++ f=2k dt=1u a=-1 b=-1 vhigh=1 vlow=0 td=1u vh=0 Cpar=1n tripdt=0 sym=0.5
++ _sym=limit(sym,1m,999m)
+B_atan2 0 wt i=atan2(sgn(b)*v(b),sgn(a)*v(a))+pi Rpar=1; Cpar={Cpar}
+B_M 0 M i=hypot(v(b),v(a)) Rpar=1; Cpar={Cpar}
+B_alpha 0 alpha i=v(wt)-int(v(wt)*3/pi)*pi/3 Rpar=1; Cpar={Cpar}
+B_sector 0 sector i=limit(0,6,ceil(v(wt)*3/pi)) Rpar=1; Cpar={Cpar}
+B_t1 0 t1 i=sin(v(alpha)+2*pi/3)*v(M) Rpar=1; Cpar={Cpar}
+B_t2 0 t2 i=sin(v(alpha))*v(M) Rpar=1; Cpar={Cpar}
+B_t3 0 t0 i=(1-v(t1)-v(t2))/2 Rpar=1; Cpar={Cpar}
+B_t4 0 t0_1 i=v(t0)+v(t1) Rpar=1; Cpar={Cpar}
+B_t5 0 t0_2 i=v(t0)+v(t2) Rpar=1; Cpar={Cpar}
+B_t6 0 t0_1_2 i=v(t0)+v(t1)+v(t2) Rpar=1; Cpar={Cpar}
+B_Ta 0 s1 i=table(int(v(sector)),0,0,1,v(t0),2,v(t0_2),3,v(t0_1_2),4,v(t0_1_2),5,v(t0_1),6,v(t0),7,0) Rpar=1 Cpar={Cpar}
+B_Tb 0 s2 i=table(int(v(sector)),0,0,1,v(t0_1),2,v(t0),3,v(t0),4,v(t0_2),5,v(t0_1_2),6,v(t0_1_2),7,0) Rpar=1 Cpar={Cpar}
+B_Tc 0 s3 i=table(int(v(sector)),0,0,1,v(t0_1_2),2,v(t0_1_2),3,v(t0_1),4,v(t0),5,v(t0),6,v(t0_2),7,0) Rpar=1 Cpar={Cpar}
+Aia 100 s1 0 0 0 12 11 0 SCHMITT td={td} vt=0 vh={vh} vhigh=vhigh vlow=vlow trise={2*dt} tfall={dt/10} tripdt={tripdt}
+Aib 100 s2 0 0 0 22 21 0 SCHMITT td={td} vt=0 vh={vh} vhigh=vhigh vlow=vlow trise={2*dt} tfall={dt/10} tripdt={tripdt}
+Aic 100 s3 0 0 0 32 31 0 SCHMITT td={td} vt=0 vh={vh} vhigh=vhigh vlow=vlow trise={2*dt} tfall={dt/10} tripdt={tripdt}
+Aa 0 11 EN 0 0 0 Sa 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_a 0 0 EN 12 0 0 _Sa 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+Ab 0 21 EN 0 0 0 Sb 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_b 0 0 EN 22 0 0 _Sb 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+Ac 0 31 EN 0 0 0 Sc 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+A_c 0 0 EN 32 0 0 _Sc 0 AND vhigh={vhigh} vlow={vlow} tripdt={tripdt}
+Vosc 100 0 pulse -1 1 0 {_sym/f} {(1-_sym)/f} 0 {1/f} rser=1g trigger v(_en)<{(vhigh+vlow)/2}
+A_en _EN 0 0 0 0 EN 0 0 BUF td={td} vhigh={Vhigh} vlow={Vlow}
+Ren 0 _EN 1G
+.ends SVPWM
+********************************************************************************
+*
+*     UcD_block - full-bridge, non-inverting UcD amplifier
+*
+********************************************************************************
+*
+* [CHARACTERISTICS]
+*
+* - The configuration is of non-inverting amplifier to have floating input.
+* - The outputs have VCSW.
+*
+*
+* [SYMBOL]
+*
+* in        = input, floating;
+* fb        = feedback, input impedance is: Ratt + {[(1/(s*Cfb)+Rser] || Rpar };
+* out+,out- = differential output;
+* Vcc,Vee   = positive and negative supply pins.
+*
+* [PARAMETERS]
+*
+* Ron,Roff            [Ohm]   = on-/off-state resistances for the switches and
+*                             anti-parallel diodes, defaults <100m,10meg>;
+* td                  [s]     = total delay time, default 150n;
+* dt                  [s]     = internal dead-time, default 50n;
+* Vfwd,Vrev           [V]     = forward/reverse voltages for the anti-parallel
+*                             diodes, defaults <0.7,1k>;
+* Lf,Cf               [H,F]   = output LC filter, defaults <33u,680n>;
+* Cfb,Rser,Rpar,Ratt  [F,Ohm] = feedback network, see configuration below,
+*                             defaults <220p,1k,8k2,1k8>.
+*
+*                 .----Rpar-----.
+*                 |             |
+* GROUND  --Ratt--*--Cfb--Rser--*--  FB
+*
+* Hidden:
+*
+* vh              [V]   = hysteresis voltage, default 1m;
+* RLs,RLp,RCs,RCp [Ohm] = series and parallel parasitics for LC output filter,
+*                       defaults <1m,100k,1m,1meg>.
+*
+********************************
+.subckt UcD_block in fb out+ out- Vcc Vee params:
++ Lf=33u Cf=680n Ron=100m Roff=10meg Cfb=220p Rser=1k Rpar=8k2 Ratt=1k8
++ td=150n dt=50n Vfwd=0.7 Vrev=1k
++ trise=dt tfall=dt/100 vh=1m RLs=1m RLp=100k RCs=1m RCp=1meg
+Rfb fbx 0 {Ratt}
+Cfb fb fbx {Cfb} Rser={Rser} Rpar={Rpar}
+Acomp in fbx 0 0 0 _x x 0 SCHMITT td={td} trise={trise} tfall={tfall} vt=0 vh={vh} tripdt={tripdt}
+.ic v(_x)=0
+Sd1 Vee sw1 _x 0 SW
+Su1 sw1 Vcc x 0 SW
+Du1 sw1 Vcc D
+Dd1 Vee sw1 D
+Sd2 Vee sw2 x 0 SW
+Su2 sw2 Vcc _x 0 SW
+Du2 sw2 Vcc D
+Dd2 Vee sw2 D
+Lf1 sw1 out+ {Lf/4} Rser={RLs} Rpar={RLp}
+Lf2 out- sw2 {Lf/4} Rser={RLs} Rpar={RLp}
+Cf out+ out- {Cf} rpar={RCp} Rser={Rcs}
+K Lf1 Lf2 1
+.model sw sw ron={Ron} roff={Roff} vt=0.5 vh=-0.5
+.model d d ron={Ron} roff={Roff} vfwd={Vfwd} vrev={Vrev} epsilon={Vfwd/7} revepsilon={Vfwd/13}
+.ends UcD_block
+********************************************************************************
+*
+*       Vsense - Voltage sensor
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* +,-       = voltage input, floating;
+* out+,out- = output, Rout=1.
+*
+* [PARAMETERS]
+*
+* G = gain, linear, default 1.
+*
+* Hidden:
+*
+* Cout  [F] = output capacitance for aid in convergence, default 0.
+*
+********************************************************************************
+.subckt Vsense + - out+ out- params: G=1 Cout=0
+G1 out- out+ + - {G}
+C1 out+ out- {Cout} Rpar=1
+.ends Vsense
+********************************************************************************
+*
+*     Wattmeter
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* V+,V- = voltage inputs, floating;
+* I+,I- = current I/O, zero resistance;
+* S,P,Q = total, active, and reactive powers outputs;
+* PF    = power factor output;
+* V,I   = voltage and current output.
+*
+* [PARAMETERS]
+*
+* f [Hz]  = estimated working frequency, default 50.
+*
+* - Hidden:
+*
+* ref     [V] = logic threshold for the s&h, must be ref<refidt, default 0.4;
+* refidt  [V] = logic thershold for the resettable integrators, must be
+*             refidt>ref, default 0.5;
+* lim     [V] = internal limits to avoid clipping, default 1g;
+* limsh   [V] = limits for the internal s&h, variable (see below);
+* corr        = amplification correction factor, variable (see below).
+*
+* - About {limsh} and {corr}:
+* SAMPLEHOLDs are A-devices, so they have {vhigh} and {vlow} as parameters, and
+* when the output reaches those limits, the s&h doesn't simply limit the output,
+* but cuts its amplification by a factor of 1000. You can test this with the
+* following setup:
+*
+* Vin in 0 pwl 0 0 1 1k ; ramp input
+* Vsh sh 0 1 ; 'S/H' input => acts as a repeater
+* Atest in 0 0 sh 0 0 out 0 SAMPLEHOLD vhigh=1 ; force upper limit to be 1
+*
+*   Vin feeds a ramp from 0 to 1k for 1s, Vsh forces the s&h to act as a
+* repeater, and Atest has set vhigh=1. The output will be ~2V@1s. Actually, it
+* looks like the final ramp value needs to be 1002 in order for the output to be
+* 2V, but this also varies with different ramps, so the attenuation can be
+* considered ~1000x.
+*   OTOH, if you want to set the limits high, it seems that 1e18 is about the
+* limit, because at 1e19 and up glitches happen.
+*   So, for this case in particular, if the internal limits (the squaring of
+* powers) tend to reach 1T, or higher, a safer way to deal with the limitation
+* is to set {vhigh} for the s&h to be very low, so that the 1000x attenuation is
+* in effect early on, and simply amplify it afterwards. Precision will, most
+* likely, be affected (at these powers it shouldn't matter that much), but the
+* limits now can be higher than 1e18, which, as high as it already is, they are
+* reached when the wattemeter is used for tens or hundreds of kV and kA.
+*   Therefore, {limsh} is, by default, equal to {lim}, unless lim>1G, when it is
+* 1m, while {corr} is the correction factor, and is 1 for lim<1G, else 1k.
+*
+*
+* [NOTES]
+*
+* - The outputs should not be loaded, most of them have capacitive and/or GOhms
+* or upwards. They're meant to be read-only, but if they are buffered...
+* - If the simulation doesn't start, pressing "ESC" during "pseudo-transient
+* analysis" might be needed to get started.
+*
+********************************
+.subckt Wattmeter I+ V+ V- I- S P Q PF V I params: f=50 lim=1g ref=0.4 refidt=0.5
++ limsh=if(lim>1g, 1m, lim) corr=if(lim>1g, 1k, 1)
+*** interweaved reset clocks
+Vclk1 clk 0 pulse 0 1 {999.5m/f} {1m/f} 0 0 {1/f} rser=1 cpar={0.1m/f}
+Vclk2 _clk 0 pulse 0 1 {499.5m/f} {1m/f} 0 0 {1/f} rser=1 cpar={0.1m/f}
+*** voltage
+* a bit of filtering can get a long way
+Gvin 0 Vin V+ V- 1
+CVin Vin 0 {1u/f} Rpar=1
+* V**2
+AVxV 0 Vin Vin 0 0 0 VxV_idt 0 OTA vhigh={lim} vlow=0 rout=1g cout={1/f} linear ic=0
+* avg
+AV_idt1 VxV_idt 0 clk 0 0 0 VxV_sh1 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={refidt}
+GV_sh1 0 _VxV_idt1 VxV_sh1 0 {corr}
+RV_sh1 _VxV_idt1 0 1
+AV_idt2 VxV_idt 0 _clk 0 0 0 VxV_sh2 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={refidt}
+GV_sh2 0 _VxV_idt2 VxV_sh2 0 {corr}
+RV_sh2 _VxV_idt2 0 1
+* S&H
+AV1 VxV_idt _VxV_idt1 clk 0 0 0 _VxV_spl 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={ref}
+AV2 VxV_idt _VxV_idt2 _clk 0 0 0 _VxV_spl 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={ref}
+Iv 0 _VxV_spl pulse 1m 0 {1/f} {1m/f} ; hack for uic
+GVamp 0 VxV_spl _VxV_spl 0 {corr}
+RVamp VxV_spl 0 1
+* implicit sqrt()
+Gv 0 V VxV_spl Vcomp 1
+Cv V 0 {1n/f} rser=1 Rpar=1g
+GV_lf 0 Vcomp V 0 1 Vto=0 dir=1
+CV_lf 0 Vcomp {0u/f} Rpar=1
+*** current
+* current sensor
+Vsense I+ I- 0
+Fi_in 0 Iin Vsense 1
+Ci_in Iin 0 {1u/f} Rpar=1
+* I**2
+AIxI 0 Iin Iin 0 0 0 IxI_idt 0 OTA vhigh={lim} vlow=0 rout=1g cout={1/f} linear ic=0
+* avg
+AI_idt1 IxI_idt 0 clk 0 0 0 IxI_sh1 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={refidt}
+GI_sh1 0 _IxI_idt1 IxI_sh1 0 {corr}
+RI_sh1 _IxI_idt1 0 1
+AI_idt2 IxI_idt 0 _clk 0 0 0 IxI_sh2 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={refidt}
+GI_sh2 0 _IxI_idt2 IxI_sh2 0 {corr}
+RI_sh2 _IxI_idt2 0 1
+* S&H
+AI1 IxI_idt _IxI_idt1 clk 0 0 0 _IxI_spl 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={ref}
+AI2 IxI_idt _IxI_idt2 _clk 0 0 0 _IxI_spl 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={ref}
+Ii 0 IxI_spl pulse 1 0 {1/f} {1m/f} ; hack for uic
+GIamp 0 IxI_spl _IxI_spl 0 {corr}
+RIamp IxI_spl 0 1
+* implicit sqrt()
+Gi 0 I IxI_spl Icomp 1
+Ci I 0 {1n/f} rser=1 Rpar=1g
+GI_lf 0 Icomp I 0 1 Vto=0 dir=1
+CI_lf Icomp 0 {0u/f} Rpar=1
+*** S
+AS 0 V I 0 0 0 S 0 OTA vhigh={lim} vlow=0 rout=1 linear
+*** P
+* V*I
+AVxI 0 Vin Iin 0 0 0 VxI_idt 0 OTA vhigh={lim} vlow=0 rout=1g cout={1/f} linear ic=0
+* avg
+AVxI_idt1 VxI_idt 0 clk 0 0 0 VxI_sh1 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={refidt}
+GVxI_sh1 0 _VxI_idt1 VxI_sh1 0 {corr}
+RVxI_sh1 _VxI_idt1 0 1
+AVxI_idt2 VxI_idt 0 _clk 0 0 0 VxI_sh2 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={refidt}
+GVxI_sh2 0 _VxI_idt2 VxI_sh2 0 {corr}
+RVxI_sh2 _VxI_idt2 0 1
+* S&H
+AP1 VxI_idt _VxI_idt1 clk 0 0 0 _P 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={ref}
+AP2 VxI_idt _VxI_idt2 _clk 0 0 0 _P 0 SAMPLEHOLD vhigh={limsh} vlow=0 ref={ref}
+GPamp 0 P _P 0 {corr}
+RPamp P 0 1
+*** Q
+* S^2 - P^2
+GSsq 0 SxS-PxP S 0 1 Vto=0 dir=1
+GPsq 0 SxS-PxP P 0 -1 Vto=0 dir=1
+RSxS-PxP SxS-PxP 0 1
+* implicit sqrt()
+GQ 0 Q SxS-PxP Qcomp 1
+CQ Q 0 {1n/f} rser=1 Rpar=1g
+GQ_lf 0 Qcomp Q 0 1 Vto=0 dir=1
+CQ_lf Qcomp 0 {0u/f} Rpar=1
+*** power factor
+Gpf 0 PF P PFcomp 1
+Cpf PF 0 {1n/f} rser=1 Rpar=1g
+APF_lf 0 S PF 0 0 0 PFcomp 0 ota vhigh={lim} rout=1 linear
+.ends Wattmeter
+********************************************************************************
+*
+*       wt - Angle generator
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - A more space-efficient approach for grid PLL's wt.
+*
+*
+* [PARAMETERS]
+*
+* f   [Hz]  = frequency, default 50;
+* phi [rad] = phase, default 0.
+*
+* - Hidden:
+*
+* tripdt  [s] = LTspice's specific for behavioural sources, with fixed tripdv=5,
+*             internally, default 1u.
+*
+********************************
+.subckt wt out params: f=50 phi=0 tripdt=1u
+Bwt 0 out i=idtmod( 2*pi*f, phi, 2*pi ) Rpar=1 tripdv=5 tripdt={tripdt}
+.ends wt
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2013.01.19  - Corrected 3ph_br_cm and SVHCC.
+*             - Overall modifications and improvements.
+* 2013.01.26  - Modified 3ph_gen's phase control: {phi[1:3]} control only the
+*             fundamental and {phi} only the harmonics, while V(PM) is added
+*             to the overall result.
+* 2013.01.27  - Added a minor hysteresis to 3ph_SW to avoid random glitches.
+*             - Minor modifications/corrections.
+* 2013.02.04  - Modified the Cable model, it should now behave better under
+*             distorted conditions and be slightly faster.
+* 2013.06.15  - Modified all .funcs by the book.
+* 2013.09.05  - Corrected dead-time for 3lvl_mod and SVHCC.
+*             - Optimized number of devices for SVPWM and HystComp.
+* 2014.04.11  - Added {vt} hidden parameter to 3lvl_mod.
+*             - Added xq parameter to 3ph_gen.
+* 2014.04.12  - Revised 3ph_SW.
+*             - Rectified BrdgRectThy.
+* 2014.04.13  - Removed TL494.
+* 2014.04.25  - Improved BrdgRectThy with internal angle and 1-phase input.
+* 2014.04.28  - Corrected 3lvl_mod with custom output logic levels.
+* 2014.05.29  - Added DC_trafo.
+* 2015.04.09  - Added hidden parameter {trise} to 3lvl_mod.
+* 2015.10.22  - Added UcD_block.
+* 2018.10.07  - Added {tripdt} and {Cpar} variables to the SVPWM block.
+*             - Improved WattMeter, much faster, precision dependent on the
+*             timestep only.
+*             - Improved 3ph_ACMotor.
+*             - Improved DC_trafo, HystComp, 3lvl_mod, 3ph_gen, 3ph_SW,
+*             BrdgRectThy, BrdgRect, BrdgRect2.
+*             - Removed PWMvm as DC_trafo does about the same thing.
+*             - Added 3ph_snub, 3ph_LC.
+*             - GPL'd.
+*
+********************************************************************************

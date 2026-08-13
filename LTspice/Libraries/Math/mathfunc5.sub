@@ -1,0 +1,256 @@
+********************************************************************************
+*
+* Variations for the 5 input summer, a more stream-lined approach.
+*
+*   Vlad, ©2008 - 2019
+*
+********************************************************************************
+*
+* [NOTES]
+*
+* - All inputs are floating so unused ones need grounding. Output is 1 Ohm.
+*
+********************************
+.subckt +++++ a b c d e out
+Ga 0 out a 0 1
+Gb 0 out b 0 1
+Gc 0 out c 0 1
+Gd 0 out d 0 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends +++++
+********************************
+.subckt -++++ a b c d e out
+Gba 0 out b a 1
+Gc 0 out c 0 1
+Gd 0 out d 0 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends -++++
+********************************
+.subckt +-+++ a b c d e out
+Gab 0 out a b 1
+Gc 0 out c 0 1
+Gd 0 out d 0 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends +-+++
+********************************
+.subckt ++-++ a b c d e out
+Ga 0 out a 0 1
+Gbc 0 out b c 1
+Gd 0 out d 0 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends ++-++
+********************************
+.subckt +++-+ a b c d e out
+Ga 0 out a 0 1
+Gb 0 out b 0 1
+Gcd 0 out c d 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends +++-+
+********************************
+.subckt ++++- a b c d e out
+G1 0 out a 0 1
+G2 0 out b 0 1
+G3 0 out c 0 1
+G4 0 out d 0 1
+G5 0 out 0 e 1
+R1 out 0 1
+.ends ++++-
+********************************
+.subckt --+++ a b c d e out
+Gca 0 out c a 1
+Gdb 0 out d b 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends --+++
+********************************
+.subckt -+-++ a b c d e out
+Gba 0 out b a 1
+Gdc 0 out d c 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends -+-++
+********************************
+.subckt -++-+ a b c d e out
+Gba 0 out b a 1
+Gcd 0 out c d 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends -++-+
+********************************
+.subckt -+++- a b c d e out
+Gba 0 out b a 1
+Gc 0 out c 0 1
+Gde 0 out d e 1
+Ro out 0 1
+.ends -+++-
+********************************
+.subckt +--++ a b c d e out
+Gab 0 out a b 1
+Gdc 0 out d c 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends +--++
+********************************
+.subckt +-+-+ a b c d e out
+Gab 0 out a b 1
+Gcd 0 out c d 1
+Ge 0 out e 0 1
+Ro out 0 1
+.ends +-+-+
+********************************
+.subckt +-++- a b c d e out
+Gab 0 out a b 1
+Gc 0 out c 0 1
+Gde 0 out d e 1
+Ro out 0 1
+.ends +-++-
+********************************
+.subckt ++--+ a b c d e out
+Ga 0 out a 0 1
+Gbc 0 out b c 1
+Ged 0 out e d 1
+Ro out 0 1
+.ends ++--+
+********************************
+.subckt ++-+- a b c d e out
+Ga 0 out a 0 1
+Gbc 0 out b c 1
+Gde 0 out d e 1
+Ro out 0 1
+.ends ++-+-
+********************************
+.subckt +++-- a b c d e out
+Ga 0 out a 0 1
+Gbe 0 out b e 1
+Gcd 0 out c d 1
+Ro out 0 1
+.ends +++--
+********************************
+.subckt ---++ a b c d e out
+Gda 0 out d a 1
+Geb 0 out e b 1
+Gc 0 out 0 c 1
+Ro out 0 1
+.ends ---++
+********************************
+.subckt --+-+ a b c d e out
+Gca 0 out c a 1
+Geb 0 out e b 1
+Gd 0 out 0 d 1
+Ro out 0 1
+.ends --+-+
+********************************
+.subckt --++- a b c d e out
+Gca 0 out c a 1
+Gdb 0 out d b 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends --++-
+********************************
+.subckt -+--+ a b c d e out
+Gba 0 out b a 1
+Gc 0 out 0 c 1
+Ged 0 out e d 1
+Ro out 0 1
+.ends -+--+
+********************************
+.subckt -+-+- a b c d e out
+Gba 0 out b a 1
+Gdc 0 out d c 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends -+-+-
+********************************
+.subckt -++-- a b c d e out
+Gba 0 out b a 1
+Gcd 0 out c d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends -++--
+********************************
+.subckt +---+ a b c d e out
+Gab 0 out a b 1
+Gc 0 out 0 c 1
+Ged 0 out e d 1
+Ro out 0 1
+.ends +---+
+********************************
+.subckt +--+- a b c d e out
+Gab 0 out a b 1
+Gcd 0 out d c 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends +--+-
+********************************
+.subckt +-+-- a b c d e out
+Gab 0 out a b 1
+Gcd 0 out c d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends +-+--
+********************************
+.subckt ++--- a b c d e out
+Gac 0 out a c 1
+Gbd 0 out b d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends ++---
+********************************
+.subckt ----+ a b c d e out
+Gb 0 out 0 b 1
+Gc 0 out 0 c 1
+Gd 0 out 0 d 1
+Gea 0 out e a 1
+Ro out 0 1
+.ends ----+
+********************************
+.subckt ---+- a b c d e out
+Gda 0 out d a 1
+Gb 0 out 0 b 1
+Gc 0 out 0 c 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends ---+-
+********************************
+.subckt --+-- a b c d e out
+Gb 0 out 0 b 1
+Gc 0 out c a 1
+Gd 0 out 0 d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends --+--
+********************************
+.subckt -+--- a b c d e out
+Gb 0 out b a 1
+Gc 0 out 0 c 1
+Gd 0 out 0 d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends -+---
+********************************
+.subckt +---- a b c d e out
+Gab 0 out a b 1
+Gc 0 out 0 c 1
+Gd 0 out 0 d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends +----
+********************************
+.subckt ----- a b c d e out
+Ga 0 out 0 a 1
+Gb 0 out 0 b 1
+Gc 0 out 0 c 1
+Gd 0 out 0 d 1
+Ge 0 out 0 e 1
+Ro out 0 1
+.ends -----
+********************************************************************************
+*
+* [UPDATES]
+*
+********************************************************************************

@@ -1,0 +1,124 @@
+***********************************************
+****sky130A transistor models for ltspice****
+***********************************************
+*Minor changes to model definitions to make it work
+*Import xnch.asy and xpch.asy symbols
+*Change the subcircuit definition to the desired transistor
+*
+* To use add the following libraries to Ltspice
+*.lib "sky130A_ltspice.lib" <Corner>
+*
+*If you are using MacOS ltspice does not recognize the paths correctly
+*Use this instead
+*.lib "sky130A_ltspice_<Corner>.lib"
+*
+*Corner can be: tt, ss, ff, sf, fs
+*
+*Make sure you have "./sky130A_ltspice" directory inside your working directory
+*
+*Monte Carlo Simulations currently not working.
+*It requires major changes to the models to make it work
+************************************************
+*Modified by Adan Torralba
+*
+* 2026/08/11 Initial Release
+*
+***********************************************
+*Transistor definitions with perimeter and area calculations
+
+
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_01v8__ff.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_01v8__mismatch.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_01v8__ff.pm3.spice"
+
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_01v8__ff.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_01v8__mismatch.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_01v8__ff.pm3.spice"
+
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_01v8_lvt__ff.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_01v8_lvt__mismatch.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_01v8_lvt__ff.pm3.spice"
+
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_01v8_lvt__ff.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_01v8_lvt__mismatch.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_01v8_lvt__ff.pm3.spice"
+
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_g5v0d10v5__ff.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_g5v0d10v5__mismatch.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__nfet_g5v0d10v5__ff.pm3.spice"
+
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_g5v0d10v5__ff.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_g5v0d10v5__mismatch.corner.spice"
+.inc "sky130A_ltspice\sky130_fd_pr__pfet_g5v0d10v5__ff.pm3.spice"
+
+.inc "sky130A_ltspice\lod.spice"
+.param mc_mm_switch=0
+.param mc_pr_switch=0
+
+.subckt xnfet_01v8 D G S B
+.param l=0.15u w=1u m=1 nf=1
+.param ad = 'int((nf+1)/2) * W/nf * 0.29u'
+.param as = 'int((nf+2)/2) * W/nf * 0.29u'
+.param ps = '2*int((nf+2)/2) * (W/nf + 0.29u)'
+.param pd = '2*int((nf+1)/2) * (W/nf + 0.29u)'
+.param nrd = '0.29u / W'
+.param nrs = '0.29u / W'
+X1 D G S B sky130_fd_pr__nfet_01v8 l=l w=w ad=ad as=as pd=pd ps=ps nrd=nrd nrs=nrs m=m
+.ends
+
+.subckt xpfet_01v8 D G S B
+.param l=0.15u w=1u m=1 nf=1
+.param ad = 'int((nf+1)/2) * W/nf * 0.29u'
+.param as = 'int((nf+2)/2) * W/nf * 0.29u'
+.param ps = '2*int((nf+2)/2) * (W/nf + 0.29u)'
+.param pd = '2*int((nf+1)/2) * (W/nf + 0.29u)'
+.param nrd = '0.29u / W'
+.param nrs = '0.29u / W'
+X1 D G S B sky130_fd_pr__pfet_01v8 l=l w=w ad=ad as=as pd=pd ps=ps nrd=nrd nrs=nrs m=m
+.ends
+
+
+.subckt xnfet_01v8_lvt D G S B
+.param l=0.15u w=1u m=1 nf=1
+.param ad = 'int((nf+1)/2) * W/nf * 0.29u'
+.param as = 'int((nf+2)/2) * W/nf * 0.29u'
+.param ps = '2*int((nf+2)/2) * (W/nf + 0.29u)'
+.param pd = '2*int((nf+1)/2) * (W/nf + 0.29u)'
+.param nrd = '0.29u / W'
+.param nrs = '0.29u / W'
+X1 D G S B sky130_fd_pr__nfet_01v8_lvt l=l w=w ad=ad as=as pd=pd ps=ps nrd=nrd nrs=nrs m=m
+.ends
+
+.subckt xpfet_01v8_lvt D G S B
+.param l=0.35u w=1u m=1 nf=1
+.param ad = 'int((nf+1)/2) * W/nf * 0.29u'
+.param as = 'int((nf+2)/2) * W/nf * 0.29u'
+.param ps = '2*int((nf+1)/2) * (W/nf + 0.29u)'
+.param pd = '2*int((nf+2)/2) * (W/nf + 0.29u)'
+.param nrd = '0.29u / W'
+.param nrs = '0.29u / W'
+X1 D G S B sky130_fd_pr__pfet_01v8_lvt l=l w=w ad=ad as=as pd=pd ps=ps nrd=nrd nrs=nrs m=m
+.ends
+
+
+.subckt xnfet_g5v0d10v5 D G S B
+.param l=0.5u w=1u m=1 nf=1
+.param ad = 'int((nf+1)/2) * W/nf * 0.29u'
+.param as = 'int((nf+2)/2) * W/nf * 0.29u'
+.param ps = '2*int((nf+2)/2) * (W/nf + 0.29u)'
+.param pd = '2*int((nf+1)/2) * (W/nf + 0.29u)'
+.param nrd = '0.29u / W'
+.param nrs = '0.29u / W'
+X1 D G S B sky130_fd_pr__nfet_g5v0d10v5 l=l w=w ad=ad as=as pd=pd ps=ps nrd=nrd nrs=nrs m=m
+.ends
+
+.subckt xpfet_g5v0d10v5 D G S B
+.param l=0.5u w=1u m=1 nf=1
+.param ad = 'int((nf+1)/2) * W/nf * 0.29u'
+.param as = 'int((nf+2)/2) * W/nf * 0.29u'
+.param ps = '2*int((nf+1)/2) * (W/nf + 0.29u)'
+.param pd = '2*int((nf+2)/2) * (W/nf + 0.29u)'
+.param nrd = '0.29u / W'
+.param nrs = '0.29u / W'
+X1 D G S B sky130_fd_pr__pfet_g5v0d10v5 l=l w=w ad=ad as=as pd=pd ps=ps nrd=nrd nrs=nrs m=m
+.ends

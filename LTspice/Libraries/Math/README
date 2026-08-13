@@ -1,0 +1,18 @@
+The list of files in [Math]:
+
+Const.asy     = constant
+Math5r.asy    = 5 input summer
+mathfunc.sub  = subcircuits for the above
+
+Math1.asy     = one input functions
+mathfunc1.sub = subcircuits for Math1.asy
+
+Math2.asy     = two inputs functions
+Math2r.asy    = round version of Math2.asy
+Math2rT.asy   = round, T-version of Math2.asy
+mathfunc2.sub = subcircuits for the two above
+
+Math5.asy     = five input, all combinations possible, summer/subtractor
+mathfunc5.sub = subcircuits for the above
+
+README        = this file

@@ -1,0 +1,172 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+*  Clarke and Park matrices (and inverses), 3-to-3, 3-to-2 and 2-to-2 phases
+* (quadrature), all in one symbol for easier workflow.
+*
+*     Vlad, ©2008 - today
+*
+********************************************************************************
+*
+* [GENERAL]
+*
+* - In general, the left pins are the inputs and the right ones, the outputs, as
+* suggested by their namings.
+* - The Clarke matrix and inverse don't make use of the 'WT' pin, so it's safe
+* to ignore.
+* - The quadrature matrices, AB/dq and dq/AB, don't use 'IN3' and 'OUT3', they
+* can be left floating.
+*
+*
+* [PARAMETERS]
+*
+* sq=<0,1>  = (abc<->AB0, abc<->dq0 only) specifies whether the matrix is
+*           amplitude invariant (0) or power invariant (1, default).
+*
+********************************
+*
+*     Clarke matrix
+*
+********************************
+.subckt abc/AB0 IN1 IN2 IN3 OUT1 OUT2 OUT3 WT params: sq=1
++ coef=(2/3)**if(sq,0.5,1) xq=if(sq,sqrt(2),2)
+GA12 0 out1 in1 in2 {coef/2}
+GA13 0 out1 in1 in3 {coef/2}
+RA out1 0 1
+GB23 0 out2 in2 in3 {sqrt(3)/2*coef}
+RB out2 0 1
+G01 0 out3 in1 0 {coef/xq}
+G02 0 out3 in2 0 {coef/xq}
+G03 0 out3 in3 0 {coef/xq}
+R0 out3 0 1
+.ends abc/AB0
+****************************************
+*
+*     Transposed Clarke matrix
+*
+****************************************
+.subckt AB0/abc IN1 IN2 IN3 OUT1 OUT2 OUT3 WT params: sq=1
++ coef=if(sq,sqrt(2/3),1) xq=if(sq,sqrt(2),1)
+Ga1 0 out1 in1 0 {coef}
+Ga3 0 out1 in3 0 {coef/xq}
+Ra out1 0 1
+Gb1 0 out2 0 in1 {coef/2}
+Gb3 0 out2 in3 0 {coef/xq}
+Rb out2 0 1
+Gb2 0 out2 in2 0 {sqrt(3)/2*coef}
+Gc1 0 out3 0 in1 {coef/2}
+Gc2 0 out3 0 in2 {sqrt(3)/2*coef}
+Gc3 0 out3 in3 0 {coef/xq}
+Rc out3 0 1
+.ends AB0/abc
+********************************
+*
+*     Park matrix
+*
+********************************
+.subckt abc/dq0 IN1 IN2 IN3 OUT1 OUT2 OUT3 WT params: sq=1
++ phi=2/3*pi coef=(2/3)**if(sq,0.5,1) xq=if(sq,sqrt(2),2) lim=1g
+BsinA 0 sinA I=sin(v(wt)) rpar=1
+BcosA 0 cosA I=cos(v(wt)) rpar=1
+BsinB 0 sinB I=sin(v(wt)-phi) rpar=1
+BcosB 0 cosB I=cos(v(wt)-phi) rpar=1
+BsinC 0 sinC I=sin(v(wt)+phi) rpar=1
+BcosC 0 cosC I=cos(v(wt)+phi) rpar=1
+Ad_ac 0 in1 cosA 0 0 0 out1 0 ota vlow={-lim} vhigh={lim} rout={coef} linear
+Ad_bc 0 in2 cosB 0 0 0 out1 0 ota vlow={-lim} vhigh={lim} linear
+Ad_cc 0 in3 cosC 0 0 0 out1 0 ota vlow={-lim} vhigh={lim} linear
+Aq_as 0 in1 0 sinA 0 0 out2 0 ota vlow={-lim} vhigh={lim} rout={coef} linear
+Aq_bs 0 in2 0 sinB 0 0 out2 0 ota vlow={-lim} vhigh={lim} linear
+Aq_cs 0 in3 0 sinC 0 0 out2 0 ota vlow={-lim} vhigh={lim} linear
+G0a 0 out3 in1 0 {coef/xq}
+G0b 0 out3 in2 0 {coef/xq}
+G0c 0 out3 in3 0 {coef/xq}
+R0 out3 0 1
+.ends abc/dq0
+****************************************
+*
+*     Transposed Park matrix
+*
+****************************************
+.subckt dq0/abc IN1 IN2 IN3 OUT1 OUT2 OUT3 WT params: sq=1
++ phi=2/3*pi coef=if(sq,sqrt(2/3),1) xq=if(sq,sqrt(2),1) lim=1g
+BcosA 0 cosA I=cos(v(wt)) rpar=1
+BsinA 0 sinA I=sin(v(wt)) rpar=1
+BcosB 0 cosB I=cos(v(wt)-phi) rpar=1
+BsinB 0 sinB I=sin(v(wt)-phi) rpar=1
+BcosC 0 cosC I=cos(v(wt)+phi) rpar=1
+BsinC 0 sinC I=sin(v(wt)+phi) rpar=1
+Aa_dc 0 in1 cosA 0 0 0 out1 0 ota vlow={-lim} vhigh={lim} rout={coef} linear
+Aa_qs 0 in2 0 sinA 0 0 out1 0 ota vlow={-lim} vhigh={lim} linear
+Ga_0 0 out1 in3 0 {coef/xq}
+Ab_dc 0 in1 cosB 0 0 0 out2 0 ota vlow={-lim} vhigh={lim} rout={coef} linear
+Ab_qs 0 in2 0 sinB 0 0 out2 0 ota vlow={-lim} vhigh={lim} linear
+Gb_0 0 out2 in3 0 {1/xq}
+Ac_dc 0 in1 cosC 0 0 0 out3 0 ota vlow={-lim} vhigh={lim} rout={coef} linear
+Ac_qs 0 in2 0 sinC 0 0 out3 0 ota vlow={-lim} vhigh={lim} linear
+Gc_0 0 out3 in3 0 {1/xq}
+.ends dq0/abc
+****************************************
+*
+*     Quadrature Park matrix
+*
+****************************************
+.subckt AB/dq IN1 IN2 IN3 OUT1 OUT2 OUT3 WT params: f=50 lim=1g
+Bsin 0 sin I=sin(v(wt)) Rpar=1
+Bcos 0 cos I=cos(v(wt)) Rpar=1
+Adc 0 in1 cos 0 0 0 out1 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+Ads 0 in2 sin 0 0 0 out1 0 ota vhigh={lim} vlow={-lim} linear
+Aqc 0 in2 cos 0 0 0 out2 0 ota vhigh={lim} vlow={-lim} linear
+Aqs 0 in1 0 sin 0 0 out2 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+.ends AB/dq
+************************************************
+*
+*     Transposed quadrature Park matrix
+*
+************************************************
+.subckt dq/AB IN1 IN2 IN3 OUT1 OUT2 OUT3 WT params: f=50 lim=1g
+Bsin 0 sin I=sin(v(wt)) Rpar=1
+Bcos 0 cos I=cos(v(wt)) Rpar=1
+Aac 0 in1 cos 0 0 0 out1 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+Aas 0 in2 0 sin 0 0 out1 0 ota vhigh={lim} vlow={-lim} linear
+Abc 0 in2 cos 0 0 0 out2 0 ota vhigh={lim} vlow={-lim} linear
+Abs 0 in1 sin 0 0 0 out2 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+.ends dq/AB
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2018.12.27  - Improved Park matrices.
+*             - Fixed Clarke matrices.
+*             - Removed abc/120 and 120/abc.
+*             - GPL'd.
+*
+********************************************************************************

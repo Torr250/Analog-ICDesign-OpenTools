@@ -1,0 +1,34 @@
+LTspice 26.0.2 for Windows
+Circuit: C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\DC_Sweep.net
+Start Time: Tue Aug 11 11:41:04 2026
+Options:logopinfo
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Total elapsed time: 0.902 seconds.
+
+Files loaded:
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\DC_Sweep.net
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice.lib
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_01v8__ss.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_01v8__mismatch.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_01v8__ss.pm3.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_01v8__ss.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_01v8__mismatch.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_01v8__ss.pm3.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_01v8_lvt__ss.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_01v8_lvt__mismatch.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_01v8_lvt__ss.pm3.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_01v8_lvt__ss.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_01v8_lvt__mismatch.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_01v8_lvt__ss.pm3.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_g5v0d10v5__ss.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_g5v0d10v5__mismatch.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__nfet_g5v0d10v5__ss.pm3.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_g5v0d10v5__ss.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_g5v0d10v5__mismatch.corner.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\sky130_fd_pr__pfet_g5v0d10v5__ss.pm3.spice
+C:\Users\atorralba\Documents\GitHub\LTspice\sky130A\sky130A_ltspice\lod.spice
+

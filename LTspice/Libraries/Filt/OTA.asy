@@ -1,0 +1,37 @@
+Version 4
+SymbolType BLOCK
+LINE Normal -32 48 -32 -48
+LINE Normal 64 0 -32 -48
+LINE Normal -32 48 64 0
+LINE Normal -20 -16 -28 -16
+LINE Normal -24 -12 -24 -20
+LINE Normal -20 -32 -28 -32
+LINE Normal -20 16 -28 16
+LINE Normal -24 20 -24 12
+LINE Normal -20 32 -28 32
+TEXT -16 -24 Left 2 1
+TEXT -16 24 Left 2 2
+TEXT 0 0 Center 2 OTA
+SYMATTR Prefix A
+SYMATTR SpiceModel OTA
+PIN -32 -32 NONE 8
+PINATTR PinName 1
+PINATTR SpiceOrder 1
+PIN -32 -16 NONE 8
+PINATTR PinName 2
+PINATTR SpiceOrder 2
+PIN -32 16 NONE 8
+PINATTR PinName 3
+PINATTR SpiceOrder 3
+PIN -32 32 NONE 8
+PINATTR PinName 4
+PINATTR SpiceOrder 4
+PIN 32 16 NONE 8
+PINATTR PinName 6
+PINATTR SpiceOrder 6
+PIN 64 0 NONE 8
+PINATTR PinName 7
+PINATTR SpiceOrder 7
+PIN -32 48 NONE 8
+PINATTR PinName 8
+PINATTR SpiceOrder 8

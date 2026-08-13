@@ -1,0 +1,338 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+* Some models from the digital world.
+*
+*   Vlad, ©2008 - today
+*
+********************************************************************************
+*
+*   ADC16 - 16bit ADC
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* in        = analog input, floating;
+* [100:115] = BUS output, Rout=1.
+*
+* [PARAMETERS]
+*
+* N=<1:16>        = number of bits for the conversion, default 16;
+* vhigh,vlow  [V] = output logic levels, defaults 1 and 0;
+* VinH,VinL   [V] = input signal range, defaults 32767 and -32768.
+*
+* - Hidden:
+*
+* td,tripdt	  [s] = LTspice's specific for A-devices, defaults <0,0>;
+*
+* [CHARACTERISTICS]
+*
+* - The output bus width is relative to the MSB (pin '[100]'), and the LSB is
+* '[{100+N-1}]'. For example, N=12 => active outputs are '[100:111]', inactive
+* (floating) outputs are '[112:115]'.
+*
+********************************************************************************
+.subckt ADC16 in [100] [101] [102] [103] [104] [105] [106] [107] [108] [109] [110] [111] [112] [113] [114] [115]
++ params: N=16 VinH=32767 VinL=-32768 vhigh=1 vlow=0 td=0 tripdt=0
++ Vinmax=VinH-VinL
+Vin in 00 {VinL}
+Ai0 00 0 0 0 0 1 -1 0 BUF vhigh=0 vlow={-Vinmax/2} ref={Vinmax/2} tripdt={tripdt}
+Ai1 {if(N>=2,1,0)} 0 0 0 0 {if(N>=2,2,0)} {if(N>=2,-2,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**2} ref={Vinmax/2**2} tripdt={tripdt}
+Ai2 {if(N>=3,2,0)} 0 0 0 0 {if(N>=3,3,0)} {if(N>=3,-3,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**3} ref={Vinmax/2**3} tripdt={tripdt}
+Ai3 {if(N>=4,3,0)} 0 0 0 0 {if(N>=4,4,0)} {if(N>=4,-4,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**4} ref={Vinmax/2**4} tripdt={tripdt}
+Ai4 {if(N>=5,4,0)} 0 0 0 0 {if(N>=5,5,0)} {if(N>=5,-5,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**5} ref={Vinmax/2**5} tripdt={tripdt}
+Ai5 {if(N>=6,5,0)} 0 0 0 0 {if(N>=6,6,0)} {if(N>=6,-6,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**6} ref={Vinmax/2**6} tripdt={tripdt}
+Ai6 {if(N>=7,6,0)} 0 0 0 0 {if(N>=7,7,0)} {if(N>=7,-7,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**7} ref={Vinmax/2**7} tripdt={tripdt}
+Ai7 {if(N>=8,7,0)} 0 0 0 0 {if(N>=8,8,0)} {if(N>=8,-8,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**8} ref={Vinmax/2**8} tripdt={tripdt}
+Ai8 {if(N>=9,8,0)} 0 0 0 0 {if(N>=9,9,0)} {if(N>=9,-9,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**9} ref={Vinmax/2**9} tripdt={tripdt}
+Ai9 {if(N>=10,9,0)} 0 0 0 0 {if(N>=10,10,0)} {if(N>=10,-10,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**10} ref={Vinmax/2**10} tripdt={tripdt}
+Ai10 {if(N>=11,10,0)} 0 0 0 0 {if(N>=11,11,0)} {if(N>=11,-11,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**11} ref={Vinmax/2**11} tripdt={tripdt}
+Ai11 {if(N>=12,11,0)} 0 0 0 0 {if(N>=12,12,0)} {if(N>=12,-12,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**12} ref={Vinmax/2**12} tripdt={tripdt}
+Ai12 {if(N>=13,12,0)} 0 0 0 0 {if(N>=13,13,0)} {if(N>=13,-13,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**13} ref={Vinmax/2**13} tripdt={tripdt}
+Ai13 {if(N>=14,13,0)} 0 0 0 0 {if(N>=14,14,0)} {if(N>=14,-14,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**14} ref={Vinmax/2**14} tripdt={tripdt}
+Ai14 {if(N>=15,14,0)} 0 0 0 0 {if(N>=15,15,0)} {if(N>=15,-15,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**15} ref={Vinmax/2**15} tripdt={tripdt}
+Ai15 {if(N>=16,15,0)} 0 0 0 0 {if(N>=16,16,0)} {if(N>=16,-16,0)} 0 BUF vhigh=0 vlow={-Vinmax/2**16} ref={Vinmax/2**16} tripdt={tripdt}
+G0 0 1 00 0 1
+G1 0 {if(N>=2,2,0)} {if(N>=2,1,0)} 0 1
+G2 0 {if(N>=3,3,0)} {if(N>=3,2,0)} 0 1
+G3 0 {if(N>=4,4,0)} {if(N>=4,3,0)} 0 1
+G4 0 {if(N>=5,5,0)} {if(N>=5,4,0)} 0 1
+G5 0 {if(N>=6,6,0)} {if(N>=6,5,0)} 0 1
+G6 0 {if(N>=7,7,0)} {if(N>=7,6,0)} 0 1
+G7 0 {if(N>=8,8,0)} {if(N>=8,7,0)} 0 1
+G8 0 {if(N>=9,9,0)} {if(N>=9,8,0)} 0 1
+G9 0 {if(N>=10,10,0)} {if(N>=10,9,0)} 0 1
+G10 0 {if(N>=11,11,0)} {if(N>=11,10,0)} 0 1
+G11 0 {if(N>=12,12,0)} {if(N>=12,11,0)} 0 1
+G12 0 {if(N>=13,13,0)} {if(N>=13,12,0)} 0 1
+G13 0 {if(N>=14,14,0)} {if(N>=14,13,0)} 0 1
+G14 0 {if(N>=15,15,0)} {if(N>=15,14,0)} 0 1
+G15 0 {if(N>=16,16,0)} {if(N>=16,15,0)} 0 1
+Ao0 -1 0 0 0 0 0 100 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**2} tripdt={tripdt}
+Ao1 {if(N>=2,-2,0)} 0 0 0 0 0 {if(N>=2,101,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**3} tripdt={tripdt}
+Ao2 {if(N>=3,-3,0)} 0 0 0 0 0 {if(N>=3,102,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**4} tripdt={tripdt}
+Ao3 {if(N>=4,-4,0)} 0 0 0 0 0 {if(N>=4,103,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**5} tripdt={tripdt}
+Ao4 {if(N>=5,-5,0)} 0 0 0 0 0 {if(N>=5,104,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**6} tripdt={tripdt}
+Ao5 {if(N>=6,-6,0)} 0 0 0 0 0 {if(N>=6,105,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**7} tripdt={tripdt}
+Ao6 {if(N>=7,-7,0)} 0 0 0 0 0 {if(N>=7,106,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**8} tripdt={tripdt}
+Ao7 {if(N>=8,-8,0)} 0 0 0 0 0 {if(N>=8,107,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**9} tripdt={tripdt}
+Ao8 {if(N>=9,-9,0)} 0 0 0 0 0 {if(N>=9,108,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**10} tripdt={tripdt}
+Ao9 {if(N>=10,-10,0)} 0 0 0 0 0 {if(N>=10,109,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**11} tripdt={tripdt}
+Ao10 {if(N>=11,-11,0)} 0 0 0 0 0 {if(N>=11,110,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**12} tripdt={tripdt}
+Ao11 {if(N>=12,-12,0)} 0 0 0 0 0 {if(N>=12,111,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**13} tripdt={tripdt}
+Ao12 {if(N>=13,-13,0)} 0 0 0 0 0 {if(N>=13,112,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**14} tripdt={tripdt}
+Ao13 {if(N>=14,-14,0)} 0 0 0 0 0 {if(N>=14,113,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**15} tripdt={tripdt}
+Ao14 {if(N>=15,-15,0)} 0 0 0 0 0 {if(N>=15,114,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**16} tripdt={tripdt}
+Ao15 {if(N>=16,-16,0)} 0 0 0 0 0 {if(N>=16,115,0)} 0 BUF vhigh={vhigh} vlow={vlow} ref={-Vinmax/2**17} tripdt={tripdt}
+.ends ADC16
+********************************************************************************
+*
+*   CNT16asy - 16bit asynchronous counter
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* -1        = clock (data) input, floating;
+* 999,666   = set/reset pins, 1G internal pulldown;
+* [100:115] = true output bus, starting with MSB, Rout=1;
+* [200:215] = complementary output bus, starting with MSB, Rout=1.
+*
+* - Both outputs need bus-named connections(!), else they're considered shorted.
+* For example, if Q output is named Y[0:15] and the other ignored, both outputs
+* will be internally shorted.
+*
+* [PARAMETERS]
+*
+* N=<1:16>        = number of bits, default 16;
+* Vhigh,Vlow  [V] = logic levels, defaults <1,0>.
+*
+* - Hidden:
+*
+* td,tau      [s] = LTspice's specific for A-devices, default 10ns (should not
+*                 be set to zero!);
+* ic          [V] = initial state for the true outputs, default 0V.
+*
+********************************************************************************
+.subckt CNT16asy -1 999 666
++ [100] [101] [102] [103] [104] [105] [106] [107] [108] [109] [110] [111] [112] [113] [114] [115]
++ [200] [201] [202] [203] [204] [205] [206] [207] [208] [209] [210] [211] [212] [213] [214] [215]
++ params: N=16 Vhigh=1 Vlow=0 td=10n ic=0 tau=0
+Rs 0 999 1G
+Rr 0 666 1G
+A15 {if(N<=16,215,0)} 0 {if(N<=16,-1,0)} {if(N<=16,999,0)} {if(N<=16,666,0)} {if(N<=16,215,0)} {if(N<=16,115,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A14 {if(N>=15,214,0)} 0 {if(N>=15,if(N==15,-1,115),0)} {if(N>=15,999,0)} {if(N>=15,666,0)} {if(N>=15,214,0)} {if(N>=15,114,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A13 {if(N>=14,213,0)} 0 {if(N>=14,if(N==14,-1,114),0)} {if(N>=14,999,0)} {if(N>=14,666,0)} {if(N>=14,213,0)} {if(N>=14,113,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A12 {if(N>=13,212,0)} 0 {if(N>=13,if(N==13,-1,113),0)} {if(N>=13,999,0)} {if(N>=13,666,0)} {if(N>=13,212,0)} {if(N>=13,112,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A11 {if(N>=12,211,0)} 0 {if(N>=12,if(N==12,-1,112),0)} {if(N>=12,999,0)} {if(N>=12,666,0)} {if(N>=12,211,0)} {if(N>=12,111,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A10 {if(N>=11,210,0)} 0 {if(N>=11,if(N==11,-1,111),0)} {if(N>=11,999,0)} {if(N>=11,666,0)} {if(N>=11,210,0)} {if(N>=11,110,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A9 {if(N>=10,209,0)} 0 {if(N>=10,if(N==10,-1,110),0)} {if(N>=10,999,0)} {if(N>=10,666,0)} {if(N>=10,209,0)} {if(N>=10,109,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A8 {if(N>=9,208,0)} 0 {if(N>=9,if(N==9,-1,109),0)} {if(N>=9,999,0)} {if(N>=9,666,0)} {if(N>=9,208,0)} {if(N>=9,108,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A7 {if(N>=8,207,0)} 0 {if(N>=8,if(N==8,-1,108),0)} {if(N>=8,999,0)} {if(N>=8,666,0)} {if(N>=8,207,0)} {if(N>=8,107,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A6 {if(N>=7,206,0)} 0 {if(N>=7,if(N==7,-1,107),0)} {if(N>=7,999,0)} {if(N>=7,666,0)} {if(N>=7,206,0)} {if(N>=7,106,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A5 {if(N>=6,205,0)} 0 {if(N>=6,if(N==6,-1,106),0)} {if(N>=6,999,0)} {if(N>=6,666,0)} {if(N>=6,205,0)} {if(N>=6,105,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A4 {if(N>=5,204,0)} 0 {if(N>=5,if(N==5,-1,105),0)} {if(N>=5,999,0)} {if(N>=5,666,0)} {if(N>=5,204,0)} {if(N>=5,104,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A3 {if(N>=4,203,0)} 0 {if(N>=4,if(N==4,-1,104),0)} {if(N>=4,999,0)} {if(N>=4,666,0)} {if(N>=4,203,0)} {if(N>=4,103,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A2 {if(N>=3,202,0)} 0 {if(N>=3,if(N==3,-1,103),0)} {if(N>=3,999,0)} {if(N>=3,666,0)} {if(N>=3,202,0)} {if(N>=3,102,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A1 {if(N>=2,201,0)} 0 {if(N>=2,if(N==2,-1,102),0)} {if(N>=2,999,0)} {if(N>=2,666,0)} {if(N>=2,201,0)} {if(N>=2,101,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+A0 {if(N>=1,200,0)} 0 {if(N>=1,if(N==1,-1,101),0)} {if(N>=1,999,0)} {if(N>=1,666,0)} {if(N>=1,200,0)} {if(N>=1,100,0)} 0 DFLOP vhigh={vhigh} vlow={vlow} td={td} ic={ic} tau={tau}
+.ends CNT16asy
+********************************************************************************
+*
+*   DAC16 - 16bit DAC
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* [100:115] = BUS input, floating;
+* -1        = output, Rout~2**(1-N);
+*
+* [PARAMETERS]
+*
+* N=<1:16>        = number of bits for conversion, default 16;
+* Vhigh,Vlow  [V] = output levels, defaults <32767,-32768>;
+* ref         [V] = input logic threshold voltage, default 0.5.
+*
+* - Hidden:
+*
+* td,tripdt   [s] = LTspice's specific for A-devices, defaults 0 and 0;
+*
+********************************************************************************
+.subckt DAC16 [100] [101] [102] [103] [104] [105] [106] [107] [108] [109] [110] [111] [112] [113] [114] [115] -1
++ params: N=16 vlow=-32768 vhigh=32767 ref=0.5 td=0 tripdt=0 adj=(vlow+(2**N-1)*vhigh)/2**N/vhigh
+A15 {if(N>=16,115,0)} 0 0 0 0 0 {if(N>=16,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**15} tripdt={tripdt}
+A14 {if(N>=15,114,0)} 0 0 0 0 0 {if(N>=15,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**14} tripdt={tripdt}
+A13 {if(N>=14,113,0)} 0 0 0 0 0 {if(N>=14,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**13} tripdt={tripdt}
+A12 {if(N>=13,112,0)} 0 0 0 0 0 {if(N>=13,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**12} tripdt={tripdt}
+A11 {if(N>=12,111,0)} 0 0 0 0 0 {if(N>=12,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**11} tripdt={tripdt}
+A10 {if(N>=11,110,0)} 0 0 0 0 0 {if(N>=11,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**10} tripdt={tripdt}
+A9 {if(N>=10,109,0)} 0 0 0 0 0 {if(N>=10,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**9} tripdt={tripdt}
+A8 {if(N>=9,108,0)} 0 0 0 0 0 {if(N>=9,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**8} tripdt={tripdt}
+A7 {if(N>=8,107,0)} 0 0 0 0 0 {if(N>=8,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**7} tripdt={tripdt}
+A6 {if(N>=7,106,0)} 0 0 0 0 0 {if(N>=7,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**6} tripdt={tripdt}
+A5 {if(N>=6,105,0)} 0 0 0 0 0 {if(N>=6,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**5} tripdt={tripdt}
+A4 {if(N>=5,104,0)} 0 0 0 0 0 {if(N>=5,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**4} tripdt={tripdt}
+A3 {if(N>=4,103,0)} 0 0 0 0 0 {if(N>=4,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**3} tripdt={tripdt}
+A2 {if(N>=3,102,0)} 0 0 0 0 0 {if(N>=3,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**2} tripdt={tripdt}
+A1 {if(N>=2,101,0)} 0 0 0 0 0 {if(N>=2,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**1} tripdt={tripdt}
+A0 {if(N>=1,100,0)} 0 0 0 0 0 {if(N>=1,-1,0)} 0 BUF ref={ref} td={td} vlow={vlow} vhigh={vhigh*adj} rout={2**0} tripdt={tripdt}
+.ends DAC16
+********************************************************************************
+*
+*   JKflop - J-K flip flop
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* J,K   = J and K inputs, floating;
+* CLK   = clock input, floating;
+* Q,_Q  = complementary outputs, Rout=1;
+* PRE   = SET pin, 1G internal pulldown;
+* CLR   = RESET pin, 1G internal pulldown;
+* RTN   = internal ground node, MUST BE USED!
+*
+* [PARAMETERS]
+*
+* Vhigh,Vlow [V]  = logic levels, defaults <1,0>.
+*
+* - Hidden:
+*
+* td [s]  = LTspice's specific for A-devices, default 10ns.
+*
+********************************************************************************
+.subckt JKflop J CLK K Q _Q PRE CLR RTN params: vhigh=1 vlow=0 td=10n
+ADFF 3 RTN CLK PRE CLR _Q Q RTN DFLOP vhigh={vhigh} vlow={vlow} td={td}
+AJ RTN _Q RTN J RTN RTN 1 RTN AND vhigh={vhigh} vlow={vlow}
+AJK RTN 1 RTN 2 RTN RTN 3 RTN OR vhigh={vhigh} vlow={vlow}
+AK RTN K RTN _Q RTN 2 RTN RTN OR vhigh={vhigh} vlow={vlow}
+RPRE PRE RTN 1G
+RCLR CLR RTN 1G
+.ends JKflop
+********************************************************************************
+*
+*   Quant16 - 16bit quantizer
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN  = input, floating;
+* OUT = output, Rout=1.
+*
+* [PARAMETERS]
+*
+* N=<1:16>      = number of bits for the conversion;
+* VinH,VinL [V] = input signal range, defaults 32767 and -32768;
+* type=<1:4>    = conversion type:
+*                 1 - int() (default)
+*                 2 - ceil()
+*                 3 - floor()
+*                 4 - round()
+*
+* - Hidden:
+*
+* tripdt [s]    = LTspice's specific for A-devices, default 0.
+*
+********************************************************************************
+.subckt Quant16 in out params: N=16 VinH=32767 VinL=-32768 type=1 tripdt=0
++ Vinmax=VinH-VinL cor=if(type==1,Vinmax/2**N,0) cor3=if(type==3,Vinmax/2**N,0) cor4=if(Type==4,Vinmax/2**(N+1),0)
+Gin 0 -100 in 0 table({VinL},{VinL+cor},{-cor},0,{cor},{cor},{VinH},{VinH})
+Vin 0 -100 {VinL} rser=1
+Ai0 -100 0 0 0 0 -101 1 0 BUF vhigh=0 vlow={-Vinmax/2} ref={Vinmax/2} tripdt={tripdt}
+Ai1 {if(N>=2,-101,0)} 0 0 0 0 {if(N>=2,-102,0)} {N>=2} 0 BUF vhigh=0 vlow={-Vinmax/2**2} ref={Vinmax/2**2} tripdt={tripdt}
+Ai2 {if(N>=3,-102,0)} 0 0 0 0 {if(N>=3,-103,0)} {N>=3} 0 BUF vhigh=0 vlow={-Vinmax/2**3} ref={Vinmax/2**3} tripdt={tripdt}
+Ai3 {if(N>=4,-103,0)} 0 0 0 0 {if(N>=4,-104,0)} {N>=4} 0 BUF vhigh=0 vlow={-Vinmax/2**4} ref={Vinmax/2**4} tripdt={tripdt}
+Ai4 {if(N>=5,-104,0)} 0 0 0 0 {if(N>=5,-105,0)} {N>=5} 0 BUF vhigh=0 vlow={-Vinmax/2**5} ref={Vinmax/2**5} tripdt={tripdt}
+Ai5 {if(N>=6,-105,0)} 0 0 0 0 {if(N>=6,-106,0)} {N>=6} 0 BUF vhigh=0 vlow={-Vinmax/2**6} ref={Vinmax/2**6} tripdt={tripdt}
+Ai6 {if(N>=7,-106,0)} 0 0 0 0 {if(N>=7,-107,0)} {N>=7} 0 BUF vhigh=0 vlow={-Vinmax/2**7} ref={Vinmax/2**7} tripdt={tripdt}
+Ai7 {if(N>=8,-107,0)} 0 0 0 0 {if(N>=8,-108,0)} {N>=8} 0 BUF vhigh=0 vlow={-Vinmax/2**8} ref={Vinmax/2**8} tripdt={tripdt}
+Ai8 {if(N>=9,-108,0)} 0 0 0 0 {if(N>=9,-109,0)} {N>=9} 0 BUF vhigh=0 vlow={-Vinmax/2**9} ref={Vinmax/2**9} tripdt={tripdt}
+Ai9 {if(N>=10,-109,0)} 0 0 0 0 {if(N>=10,-110,0)} {N>=10} 0 BUF vhigh=0 vlow={-Vinmax/2**10} ref={Vinmax/2**10} tripdt={tripdt}
+Ai10 {if(N>=11,-110,0)} 0 0 0 0 {if(N>=11,-111,0)} {N>=11} 0 BUF vhigh=0 vlow={-Vinmax/2**11} ref={Vinmax/2**11} tripdt={tripdt}
+Ai11 {if(N>=12,-111,0)} 0 0 0 0 {if(N>=12,-112,0)} {N>=12} 0 BUF vhigh=0 vlow={-Vinmax/2**12} ref={Vinmax/2**12} tripdt={tripdt}
+Ai12 {if(N>=13,-112,0)} 0 0 0 0 {if(N>=13,-113,0)} {N>=13} 0 BUF vhigh=0 vlow={-Vinmax/2**13} ref={Vinmax/2**13} tripdt={tripdt}
+Ai13 {if(N>=14,-113,0)} 0 0 0 0 {if(N>=14,-114,0)} {N>=14} 0 BUF vhigh=0 vlow={-Vinmax/2**14} ref={Vinmax/2**14} tripdt={tripdt}
+Ai14 {if(N>=15,-114,0)} 0 0 0 0 {if(N>=15,-115,0)} {N>=15} 0 BUF vhigh=0 vlow={-Vinmax/2**15} ref={Vinmax/2**15} tripdt={tripdt}
+Ai15 {if(N>=16,-115,0)} 0 0 0 0 {if(N>=16,-116,0)} {N>=16} 0 BUF vhigh=0 vlow={-Vinmax/2**16} ref={Vinmax/2**16} tripdt={tripdt}
+G0 0 -101 -100 0 1
+G1 0 {if(N>=2,-102,0)} {if(N>=2,-101,0)} 0 1
+G2 0 {if(N>=3,-103,0)} {if(N>=3,-102,0)} 0 1
+G3 0 {if(N>=4,-104,0)} {if(N>=4,-103,0)} 0 1
+G4 0 {if(N>=5,-105,0)} {if(N>=5,-104,0)} 0 1
+G5 0 {if(N>=6,-106,0)} {if(N>=6,-105,0)} 0 1
+G6 0 {if(N>=7,-107,0)} {if(N>=7,-106,0)} 0 1
+G7 0 {if(N>=8,-108,0)} {if(N>=8,-107,0)} 0 1
+G8 0 {if(N>=9,-109,0)} {if(N>=9,-108,0)} 0 1
+G9 0 {if(N>=10,-110,0)} {if(N>=10,-109,0)} 0 1
+G10 0 {if(N>=11,-111,0)} {if(N>=11,-110,0)} 0 1
+G11 0 {if(N>=12,-112,0)} {if(N>=12,-111,0)} 0 1
+G12 0 {if(N>=13,-113,0)} {if(N>=13,-112,0)} 0 1
+G13 0 {if(N>=14,-114,0)} {if(N>=14,-113,0)} 0 1
+G14 0 {if(N>=15,-115,0)} {if(N>=15,-114,0)} 0 1
+Gout 0 out 1 0 {N}
+Vout out 0 {VinH-cor-cor3-cor4} rser=1
+.ends Quant16
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2013.01.19  - Modified all the symbols so they now have buses instead of an
+*             array of pins.
+*             - Added 1GOhm resistors in key places so that grounding isn't a
+*             must anymore.
+*             - Overall modifications and improvements.
+* 2013.02.02  - Replaced Bin2Dec with a G-source variant, ~20% faster.
+* 2013.02.03  - Added Dec2Bin.
+*             - Added parameter {ic} to CNT16asy.
+*             - Added parameter {N} to Bin2Dec.
+* 2013.06.14  - Replaced all .funcs to be by the book.
+* 2013.07.26  - Added SampledSource.
+* 2014.04.05  - Remade Bin2Dec.
+* 2014.04.07  - Removed SampledSource (now in [Filt]).
+* 2014.04.08  - Remade Bin2Dec and Dec2Bin.
+* 2015.05.03  - Remade Dec2Bin with LTspice primitives, only.
+* 2015.05.05  - Removed Bin2Dec and Dec2Bin.
+*             - Added Quant16.
+* 2015.05.10  - Added {N} to DAC16.
+* 2015.05.11  - Corrected Quant16 for N<16.
+* 2018.12.27  - ADC16, CNT16, DAC16, and Quant16 now have dynamically enabled/
+*             disabled elements, depending on the {N} parameter. Their symbols
+*             have also been altered (the pin naming).
+*             - Modified ADC16 and DAC16 to have their outputs change relative
+*             to MSB.
+*             - DAC16 has now exact solution.
+*             - Corrected Quant16 round() conversion.
+*             - GPL'd.
+*
+********************************************************************************

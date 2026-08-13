@@ -1,0 +1,32 @@
+The list of files in [Filt]:
+
+AGC.asy           = automatic gain control
+DeadTime.asy      = dead-time (digital)
+DeadZone.asy      = dead-zone (analog)
+Delay.asy         = time-delay (analog or digital)
+Diff.asy          = analog differentiator
+FreqDet.asy       = frequency detector
+Gain.asy          = buffer/gain
+Integ_r.asy       = resettable integrator
+Laplace.asy       = 2nd order Laplace transfer function,-20 or -40dB/dec only
+LeadLag.asy       = all-pass, voltage controlled lead/lag filter
+Lim.asy           = hard or soft limiter
+LimExt.asy        = hard limiter with external limits
+MUX.asy           = analog 8:1 multiplexer
+PhaseDet.asy      = phase detector
+PID.asy           = proportional-integral-derivative controller (analog, digital)
+PLL.asy           = phase locked loop
+RMS.asy           = LTspice's version of RMS detector
+SampledSource.asy = LTspice's sine and pulse source, but sampled
+SlewRate.asy      = slew-rate limiter
+SOGI.asy          = Second-Order Generalized Integrator
+UpDnSpl.asy       = up-/down-sampler
+filt.sub          = subcircuits for the above
+
+Filter.asy        = quite universal analog/digital filter.
+filter.sub        = subcircuits for Filter.asy.
+
+StateSpace.asy    = 1st, 2nd and 3rd order state space matrices
+statespace.sub    = subcircuits for StateSpace.asy
+
+README            = this file

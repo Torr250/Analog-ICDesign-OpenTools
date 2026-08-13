@@ -1,0 +1,383 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+*  A simplified and multi-functional approach to mathematical functions. Simply
+* place Math1 symbol in the schematic and then choose the desired math function
+* through the drop-down menu in the symbol's properties. Or simply right-click
+* on it's name and rename it, for example from '+' to 'x'.
+*  The reason for this is usability, easier workflow and, not lastly, a modular
+* approach, meaning many other functions can be added to the list without the
+* need to create a symbol for each.
+*
+*   Vlad, ©2008 - today
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* IN  = input, floating;
+* OUT = output, Rout=1.
+*
+*
+* [GENERAL]
+*
+* - Math1 means symbol with one variable. The following functions are available:
+*
+* 1/x
+* abs(x)
+* acos(x)
+* acosh(x)
+* asin(x)
+* asinh(x)
+* atan(x)
+* atanh(x)
+* ceil(x)
+* cos(x)
+* cosh(x)
+* exp(x)
+* floor(x)
+* int(x)
+* ln(x)
+* log(x)
+* log10(x)
+* mod1(x,y)	(mod1 (one input) to avoid cross-naming with mod(a,b) from Math2)
+* pow(x,y)
+* pwr(x,y)
+* pwrs(x,y)
+* quant(x)	(quantizaion to the value of {y})
+* round(x)
+* sgn(x)
+* sin(x)
+* sinh(x)
+* sqrt(x)
+* tan(x)
+* tanh(x)
+* u(x)
+* uramp(x)
+*
+*  where {x} is the input and {y} is a fixed parameter.
+*
+*
+* [PARAMETERS]
+*
+* y         = 1. a minimum estimated number to avoid division by zero (1/x);
+*             2. fixed number for mod1();
+*             3. exponent for pwr(), pow() and pwrs();
+*             4. quantifying number in quant();
+* phi [rad] = displacement angle for trigonometric functions.
+*
+* - Hidden:
+*
+* tripdv,tripdt = LTspice's specific for B-sources, default <0,0>;
+* lim   [V]     = internal limits to avoid clipping, default 1g;
+* fmax  [Hz]    = bandwidth estimation for implicit methods, default 1meg;
+* Cout  [F]     = output capacitance for aid in convergence, default 0.
+*
+************************
+*
+*	1/x
+*
+************************
+.subckt 1/x in out params: fmax=1meg lim=1g
+Afb fb 0 0 0 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1g cout={1n/fmax} ref=1 linear
+Adiv 0 out in 0 0 0 fb 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+.ends 1/x
+************************
+*
+*	abs(x)
+*
+************************
+.subckt abs in out params: lim=1g Cout=0
+Gabs 0 out in 0 table({-lim},{lim},0,0,{lim},{lim})
+Cout 0 out {Cout} Rpar=1
+.ends abs
+********************************
+*
+*	acos(x), arccos(x)
+*
+********************************
+.subckt acos in out params: phi=0 tripdv=0 tripdt=0
+B1 0 out I=acos(v(in)+phi) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends acos
+************************
+*
+*	acosh(x), arccosh(x)
+*
+************************
+.subckt acosh in out params: tripdv=0 tripdt=0
+B1 0 out I=acosh(v(in)) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends acosh
+********************************
+*
+*	asin(x), arcsin(x)
+*
+********************************
+.subckt asin in out params: phi=0 tripdv=0 tripdt=0
+B1 0 out I=asin(v(in)+phi) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends asin
+************************
+*
+*	asinh(x), arcsinh(x)
+*
+************************
+.subckt asinh in out params: tripdv=0 tripdt=0
+B1 0 out I=asinh(v(in)) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends asinh
+********************************
+*
+*	atan(x), arctan(x)
+*
+********************************
+.subckt atan in out params: phi=0 tripdv=0 tripdt=0
+B1 0 out I=atan(v(in)+phi) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends atan
+************************
+*
+*	atanh(x), arctanh(x)
+*
+************************
+.subckt atanh in out params: tripdv=0 tripdt=0
+B1 0 out I=atanh(v(in)) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends atanh
+************************
+*
+*	ceil(x)
+*
+************************
+.subckt ceil in out params: tripdv=0 tripdt=0
+B1 0 out I=ceil(v(in)) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends ceil
+************************
+*
+*	cos(x)
+*
+************************
+.subckt cos in out params: phi=0 tripdv=0 tripdt=0
+B1 0 out I=cos(v(in)+phi) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends cos
+************************
+*
+*	cosh(x)
+*
+************************
+.subckt cosh in out params: tripdv=0 tripdt=0
+B1 0 out I=cosh(v(in)) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends cosh
+************************
+*
+*	exp(x)
+*
+************************
+.subckt exp in out params: tripdv=0 tripdt=0
+B1 0 out I=exp(v(in)) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends exp
+************************
+*
+*	floor(x)
+*
+************************
+.subckt floor in out params: tripdv=0 tripdt=0
+B1 0 out I=floor(v(in)) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends floor
+************************
+*
+*	int(x)
+*
+************************
+.subckt int in out params: tripdv=0 tripdt=0
+B1 0 out I=int(v(in)) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends int
+********************************
+*
+*	ln(x), log(x)
+*
+********************************
+.subckt ln in out params: tripdv=0 tripdt=0
+B1 0 out I=ln(v(in)) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends ln
+********************************
+.subckt log in out params: tripdv=0 tripdt=0
+B1 0 out I=log(v(in)) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends log
+************************
+*
+*	log10(x)
+*
+************************
+.subckt log10 in out params: tripdv=0 tripdt=0
+B1 0 out I=log10(v(in)) Rpar=1  tripdv={tripdv} tripdt={tripdt}
+.ends log10
+************************
+*
+*	mod(x,y)
+*
+************************
+.subckt mod1 in out params: y=2 tripdv=0 tripdt=0
+B1 0 out I=v(in)-int(v(in)/y)*y Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends mod1
+************************
+*
+*	pow(x)
+*
+************************
+.subckt pow in out params: y=2 tripdv=0 tripdt=0
+B1 0 out I=pow(v(in),y) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends pow
+************************
+*
+*	pwr(x)
+*
+************************
+.subckt pwr in out params: y=2 tripdv=0 tripdt=0
+B1 0 out I=pwr(v(in),y) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends pwr
+************************
+*
+*	pwrs(x)
+*
+************************
+.subckt pwrs in out params: y=2 tripdv=0 tripdt=0
+B1 0 out I=pwrs(v(in),y) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends pwrs
+************************
+*
+*	quant(x)
+*
+************************
+.subckt quant in out params: y=2 tripdv=0 tripdt=0
+B1 0 out I=int(v(in)*y)/y Rpar=1  tripdv={tripdv} tripdt={tripdt}
+.ends quant
+************************
+*
+*	round(x)
+*
+************************
+.subckt round in out params: tripdv=0 tripdt=0
+B1 0 out I=round(v(in)) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends round
+************************
+*
+*	sgn(x)
+*
+************************
+.subckt sgn in out params: y=0 Cout=0 tripdv=0 tripdt=0
+Bout 0 out I=sgn(V(in)+y) Rpar=1 Cpar={Cout} tripdv={tripdv} tripdt={tripdt}
+.ends sgn
+************************
+*
+*	sin(x)
+*
+************************
+.subckt sin in out params: phi=0 tripdv=0 tripdt=0
+B1 0 out I=sin(v(in)+phi) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends sin
+************************
+*
+*	sinh(x)
+*
+************************
+.subckt sinh in out params: tripdv=0 tripdt=0
+B1 0 out I=sinh(v(in)) Rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends sinh
+************************
+*
+*	sqrt(x)
+*
+************************
+.subckt sqrt in out fmax=1meg lim=1u
+*** sqrt coughs if V(in)<0
+* uramp() first...
+Au in 0 0 0 0 0 u 0 BUF ref=0
+Auramp 0 in u 0 0 0 uramp 0 OTA vhigh={lim} vlow=0 rout=1 linear
+* ...then implicit sqrt() ...
+Afb 0 out out 0 0 0 fb 0 OTA vhigh={lim} vlow=0 rout=1 linear
+Alf fb uramp 0 0 0 0 lf 0 OTA vhigh={lim} vlow=0 rout=1g cout={1n/fmax} linear
+* ...but with another abs()
+Asgn lf 0 0 0 0 0 sgn 0 SCHMITT vt=0 vh=0 vlow=-1
+Aout 0 lf sgn 0 0 0 out 0 OTA vhigh={lim} vlow=0 rout=1 linear
+.ends sqrt
+************************
+*
+*	tan(x)
+*
+************************
+.subckt tan in out params: phi=0 tripdv=0 tripdt=0
+B1 0 out I=tan(v(in)+phi) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends tan
+************************
+*
+*	tanh(x)
+*
+************************
+.subckt tanh in out y=0 params: tripdv=0 tripdt=0
+Aout 0 in 0 0 0 0 out 0 OTA vhigh=1 vlow=-1 ref={y} iout=1 rout=1
+.ends tanh
+************************
+*
+*	u(x)
+*
+************************
+.subckt u in out params: y=0 Cout=0 tripdv=0 tripdt=0
+Aout in 0 0 0 0 0 out 0 BUF ref={y} Cout={Cout} tripdt={tripdt}
+.ends u
+************************
+*
+*	uramp(x)
+*
+************************
+.subckt uramp in out params: y=0 lim=1meg Cout=0
+Gout 0 out in 0 table({-y},0,{lim-y},{lim})
+Vout out 0 {y} Rser=1 Cpar={Cout}
+.ends uramp
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2012.02.04  - Added log as the equivalent of ln.
+*             - Changed the old log to log10.
+* 2013.11.11  - Added the long forgotten tanh.
+* 2014.04.08  - Modified mod1, int() is faster than floor().
+*             - Added the also long forgotten uramp.
+*             - Added offset {y} to sgn, u, uramp.
+*             - Added {phi} phase to asin, acos, atan, tan.
+*             - Corrected atanh.
+* 2016.03.08  - Modified pwr and pwrs to have the newly discovered G-source
+*             with {Vto} and {dir}.
+*             - Added sgn2, u2, and uramp2 with the new G-source instead of
+*             a B-source.
+* 2018.12.27  - Modified 1/x to have an implicit version.
+*             - Improved u.
+*             - Improved tanh and added {y} parameter.
+*             - Added hidden {lim} parameter.
+*             - Removed sgn2, uramp2.
+*             - GPL'd.
+*
+********************************************************************************

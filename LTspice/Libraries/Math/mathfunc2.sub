@@ -1,0 +1,234 @@
+********************************************************************************
+* Author: Vlad Ionescu
+* Copyright (C) 2008-2019, Vlad Ionescu, <imbvlad@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU Library General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+********************************************************************************
+********************************************************************************
+*
+* For more info, go to:
+*  https://ltspicegoodies.ltwiki.org
+* or visit
+*  https://ltwiki.org/?title=Filter_Page_and_LTspice_Goodies
+* and choose the link for "Filter"
+*
+********************************************************************************
+********************************************************************************
+*
+*  A simplified and multi-functional approach to mathematical functions. Simply
+* place Math2(r) symbol in the schematic and then choose the desired math
+* function through the drop-down menu in the symbol's properties. Or simply
+* right-click on it's name and rename it, for example from '+' to 'x'.
+*  The reason for this is usability, easier workflow and, not lastly, a modular
+* approach, meaning many other functions can be added to the list without the
+* need to create a symbol for each, while still being recognizeable.
+*
+*   Vlad, ©2008 - today
+*
+********************************************************************************
+*
+* [SYMBOL]
+*
+* A,B = inputs, floating;
+* OUT = output, Rout=1.
+*
+*
+* [GENERAL]
+*
+* - Math2(r) means symbol with two variables. The following functions are
+* available:
+*
+*     function  | list name
+* --------------+------------
+*       a+b     |     +
+*       a-b     |     -
+*       b-a     |     -+
+*       a*b     |     x
+*       a/b     |     /
+*       b/a     |     \
+*       a==b    |     ~~
+*       a<>b    |     <>
+*   atan2(a,b)  |   atan2
+*   hypot(a,b)  |   hypot
+*     max(a,b)  |    max
+*     min(a,b)  |    min
+*     mod(a,b)  |    mod
+*
+*
+* [PARAMETERS]
+*
+* a,b     = control the signum of the inputs for atan2();
+* dc [V]  = "DC" adjustment for atan2();
+*
+* - Hidden:
+*
+* lim   [V]     = internal limits to avoid clipping, default 1g;
+* fmax  [Hz]    = estimated bandwidth for implicit methods, default 1meg;
+* tripdv,tripdt	= LTspice's specific for B-sources, default <0,0>.
+*
+************************
+*
+*       a+b
+*
+************************
+.subckt + a b out
+G1 0 out a 0 1
+G2 0 out b 0 1
+R1 0 out 1
+.ends +
+************************
+*
+*       a-b
+*
+************************
+.subckt - a b out
+G1 0 out a b 1
+R1 out 0 1
+.ends -
+************************
+*
+*       b-a
+*
+************************
+.subckt | a b out
+G1 0 out b a 1
+R1 0 out 1
+.ends |
+************************
+*
+*       a*b
+*
+************************
+.subckt x a b out params: lim=1g
+A 0 a b 0 0 0 out 0 OTA Vhigh={lim} Vlow={-lim} Rout=1 linear
+.ends x
+************************
+*
+*   a/b, implicit
+*
+************************
+.subckt / a b out params: lim=1g fmax=1meg
+Adiv 0 b out 0 0 0 comp 0 OTA Vhigh={lim} vlow={-lim} Rout=1 linear
+Alf comp a 0 0 0 0 out 0 OTA Vhigh={lim} Vlow={-lim} Rout=1g Cout={1n/fmax} linear
+.ends /
+************************
+*
+*   b/a, implicit
+*
+************************
+.subckt \ a b out params: lim=1m fmax=1meg
+Adiv 0 a out 0 0 0 comp 0 OTA Vhigh={lim} vlow={-lim} Rout=1 linear
+Alf comp b 0 0 0 0 out 0 OTA Vhigh={lim} Vlow={-lim} Rout=1g Cout={1n/fmax} linear
+.ends \
+************************
+*
+*       a==b
+*
+************************
+*
+* [NOTES]
+*
+* - Names with "=" won't be recognized by LTspice, and using "==" will make the
+* name visible in the list but not usable. Thus, "~~" was chosen, hopefully, as
+* a visually similar alternative.
+*
+************************
+.subckt ~~ a b out params: tripdt=0
+A1 a b 0 0 0 out 0 0 SCHMITT vlow=-1 vt=0 vh=0 tripdt={tripdt}
+A2 b a 0 0 0 out 0 0 SCHMITT vlow=-1 vt=0 vh=0 tripdt={tripdt}
+.ends ~~
+************************
+*
+*       a!=b
+*
+************************
+.subckt !~ a b out params: tripdt=0
+A1 a b 0 0 0 0 out 0 SCHMITT vhigh=2 vt=0 vh=0 tripdt={tripdt}
+A2 b a 0 0 0 0 out 0 SCHMITT vhigh=2 vt=0 vh=0 tripdt={tripdt}
+.ends !~
+************************
+*
+*     atan2(a,b)
+*
+************************
+.subckt atan2 a b out params: dc=0 a=1 b=1 tripdv=0 tripdt=0
+B1 0 out I=atan2(sgn(a)*v(a),sgn(b)*v(b))+dc rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends atan2
+************************
+*
+* hypot(a,b), implicit
+*
+************************
+.subckt hypot a b out params: lim=1g fmax=1meg
+Aa 0 a a 0 0 0 sq 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+Ab 0 b b 0 0 0 sq 0 ota vhigh={lim} vlow={-lim} linear
+Afb 0 out out 0 0 0 fb 0 ota vhigh={lim} vlow=0 rout=1 linear
+Aout fb sq 0 0 0 0 out 0 ota vhigh={lim} vlow=0 rout=1g cout={1n/fmax}
+.ends hypot
+************************
+*
+*     max(a,b)
+*
+************************
+.subckt max a b out params: lim=1g
+Aa 0 a 2 0 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+Ab 0 b 1 0 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Asel a b 0 0 0 1 2 0 SCHMITT vt=0 vh=0
+.ends max
+************************
+*
+*      min(a,b)
+*
+************************
+.subckt min a b out params: lim=1g
+Aa 0 a 1 0 0 0 out 0 ota vhigh={lim} vlow={-lim} rout=1 linear
+Ab 0 b 2 0 0 0 out 0 ota vhigh={lim} vlow={-lim} linear
+Asel a b 0 0 0 1 2 0 SCHMITT vt=0 vh=0
+.ends min
+************************
+*
+*     mod(a,b)
+*
+************************
+.subckt mod a b out
+B1 0 out I=v(a)-int(v(a)/v(b))*v(b) rpar=1 tripdv={tripdv} tripdt={tripdt}
+.ends mod
+********************************************************************************
+*
+* [UPDATES]
+*
+* 2013.02.03	- Minor modifications and corrections to x2.
+* 2013.02.19	- Minor corrections in text.
+*		          - Added -+ (b-a) and /* (b/a), increasing flexibility in design,
+*		          along with a new symbol, Math2rT.asy.
+* 2014.04.08	- Modified mod to have int() instead of floor(), faster.
+* 2016.03.08	- Added/replaced the default a*b to include the undocumented
+*		          G-source with {Vto} and {dir}.
+*		          - Modified /* to be /x.
+* 2018.12.14  - Long forgotten OTA replacement for multiplication and division.
+*             - Renamed -+ to |.
+*             - Renamed /x to \.
+*             - Renamed <> to !~.
+*             - Modified x, /, \, and hypot to be implicit methods.
+*             - Modified min and max, no longer depend on temporal tweaks.
+*             - Modified ~~ and !~ from B-sources to A-devices.
+*             - Corrected long-standing typo for MOD.
+*             - Removed x2, x3, and x4.
+*             - GPL'd.
+* 2019.03.04  - Corrected accidental reversion of min and max.
+*
+********************************************************************************

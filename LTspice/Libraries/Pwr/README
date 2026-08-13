@@ -1,0 +1,33 @@
+The list of files in [Pwr]:
+
+3lvl_mod.asy    = three-phase, three-level modulation controller
+3ph_ACMotor.asy = three-phase induction motor
+3ph_br_cm.asy   = three-phase switching bridge, current mode
+3ph_br_vm.asy   = three-phase switching bridge, voltage mode
+3ph_gen.asy     = three-phase harmonic generator
+3ph_LC.asy      = three-phase LC lowpass, delta or wye
+3ph_snub.asy    = three-phase series RC snubber, delta or wye
+3ph_SW.asy      = three-phase to three-phase timed switch
+BrdgRect.asy    = three-phase diode bridge rectifier
+BrdgRectThy.asy = three-phase thyristor bridge rectifier
+Cable.asy       = power cable
+DC_trafo.asy    = small signal DC trafo with external duty cycle control
+Disturb.asy     = disturbance signal inducer
+HystComp.asy    = single-phase hysteresis modulation controller
+Isense.asy      = isolated current sensor
+RLC.asy         = three-phase, series/parallel, RLC load
+SVHCC.asy       = three-phase, space-vector, hysteresis current controller
+SVPWM.asy       = three-phase, space-vector, pulse width modulation controller
+UcD_block.asy   = UcD-type universal stage
+Vsense.asy      = isolated voltage sensor
+Wattmeter.asy   = watt-meter
+wt.asy          = angle generator
+pwr.sub         = subcircuits for the above
+
+sym.asy         = symmetrical components matrix, phasor approach
+sym.sub         = subcircuits for sym.asy
+
+Transforms.asy  = Clarke/Park/symmetrical components
+transforms.sub  = subcircuits for Transforms.asy
+
+README          = this file
