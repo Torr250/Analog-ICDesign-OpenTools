@@ -1,0 +1,66 @@
+LTspice 26.0.2 for Windows
+Circuit: C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\Active_CTLE_500M.net
+Start Time: Fri Aug 14 10:07:24 2026
+Options:logopinfo
+
+.step rs=2000
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Direct Newton iteration succeeded in finding operating point.
+Semiconductor Device Operating Points:
+                        --- BSIM4 MOSFETS ---
+Name:    u1:x1:m0     u3:x1:m0     u2:x1:m0     u4:x1:m0     u5:x1:m0
+Model: nfet_03v3.12 nfet_03v3.12 nfet_03v3.12 nfet_03v3.13 nfet_03v3.13
+Id:      4.18e-04     4.18e-04     4.18e-04     4.18e-04     4.18e-04
+Vgs:     1.31e+00     1.31e+00     1.31e+00     1.03e+00     1.03e+00
+Vds:     1.33e+00     1.33e+00     1.33e+00     5.09e-01     5.09e-01
+Vbs:    -5.09e-01    -5.09e-01    -5.09e-01     0.00e+00     0.00e+00
+Vth:     8.30e-01     8.30e-01     8.30e-01     7.00e-01     7.00e-01
+Vdsat:   4.05e-01     4.05e-01     4.05e-01     3.10e-01     3.10e-01
+Gm:      1.39e-03     1.39e-03     1.39e-03     2.16e-03     2.16e-03
+Gds:     2.24e-05     2.24e-05     2.24e-05     3.31e-05     3.31e-05
+Gmb      3.33e-04     3.33e-04     3.33e-04     8.00e-04     8.00e-04
+Cbd:     5.70e-15     5.70e-15     5.70e-15     2.29e-14     2.29e-14
+Cbs:     7.20e-15     7.20e-15     7.20e-15     2.71e-14     2.71e-14
+
+Name:    u6:x1:m0
+Model: nfet_03v3.13
+Id:      4.18e-04
+Vgs:     1.03e+00
+Vds:     5.09e-01
+Vbs:     0.00e+00
+Vth:     7.00e-01
+Vdsat:   3.10e-01
+Gm:      2.16e-03
+Gds:     3.31e-05
+Gmb      8.00e-04
+Cbd:     2.29e-14
+Cbs:     2.71e-14
+
+
+
+.step rs=4000
+Direct Newton iteration succeeded in finding operating point.
+
+.step rs=6000
+Direct Newton iteration succeeded in finding operating point.
+
+.step rs=8000
+Direct Newton iteration succeeded in finding operating point.
+
+.step rs=10000
+Direct Newton iteration succeeded in finding operating point.
+
+.step rs=12000
+Direct Newton iteration succeeded in finding operating point.
+Total elapsed time: 0.904 seconds.
+
+Files loaded:
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\Active_CTLE_500M.net
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\design.ngspice
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\sm141064.ngspice
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\gf180mcuD_ltspice.lib
+

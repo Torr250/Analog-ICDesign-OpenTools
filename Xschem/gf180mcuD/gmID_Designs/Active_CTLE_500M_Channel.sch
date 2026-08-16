@@ -202,7 +202,7 @@ value="
   option remzerovec
   save all
   write Active_CTLE_500M_Channel.raw
-  write /foss/designs/gf180mcuD/analog/eye_diagram/Active_CTLE_500M_Channel.raw
+  write /foss/designs/gf180mcuD/eye_diagram/Active_CTLE_500M_Channel.raw
 .endc
 "}
 C {vsource.sym} -600 -200 0 0 {name=V9 value='VDD' savecurrent=false}
@@ -362,7 +362,7 @@ C {gnd.sym} 180 230 0 0 {name=l16 lab=0}
 C {lab_wire.sym} 180 80 0 0 {name=p17 sig_type=std_logic lab=Vx2}
 C {lab_wire.sym} 100 140 0 0 {name=p18 sig_type=std_logic lab=VBN}
 C {res.sym} 410 -30 0 0 {name=R6
-value=10k
+value=4.5k
 footprint=1206
 device=resistor
 m=1}
@@ -443,10 +443,8 @@ C {vcvs.sym} 750 370 0 0 {name=E8 value=0.5}
 C {gnd.sym} 750 400 0 0 {name=l31 lab=0}
 C {lab_wire.sym} 660 390 0 0 {name=p36 sig_type=std_logic lab=RxN}
 C {lab_wire.sym} 780 310 0 0 {name=p37 sig_type=std_logic lab=Rx}
-C {devices/code_shown.sym} -1110 -630 0 0 {name=CHANNEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.include /foss/designs/gf180mcuD/analog/tline_model/channel_model/channel_model.sp"
+C {channel_model/tline_m10at500MHz.sym} -70 410 0 0 {name=x1}
+C {channel_model/tline_m10at500MHz.sym} -70 490 0 0 {name=x2}
+C {code_shown.sym} -1160 -650 0 0 {name=s1 only_toplevel=false value="
+.include /foss/designs/gf180mcuD/channel_model/tline_m10at500MHz.sp
 "}
-C {tline_model/channel_model.sym} -70 410 0 0 {name=x3}
-C {tline_model/channel_model.sym} -70 490 0 0 {name=x1}

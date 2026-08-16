@@ -1,0 +1,18 @@
+LTspice 26.0.2 for Windows
+Circuit: C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\Channel_model_TRAN.net
+Start Time: Fri Aug 14 10:36:51 2026
+Options:baudrate={BitRate}
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Direct Newton iteration succeeded in finding operating point.
+Total elapsed time: 0.542 seconds.
+
+Files loaded:
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\Channel_model_TRAN.net
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\fr408_1m.sp
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\nelco4000_13_20inch.sp
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\nelco4000_13_12inch.sp
+

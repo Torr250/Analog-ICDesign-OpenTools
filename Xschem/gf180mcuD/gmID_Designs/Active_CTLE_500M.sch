@@ -7,13 +7,13 @@ F {}
 E {}
 B 2 620 60 1420 460 {flags=graph
 y1=-110
-y2=12
+y2=15
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=6
+x1=7
 x2=10
 divx=5
 subdivx=8
@@ -26,14 +26,14 @@ logy=0
 color=4
 node="Phase (deg); ph(out)"}
 B 2 620 -390 1420 10 {flags=graph
-y1=-14
-y2=4.9
+y1=-10.22
+y2=8.68
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=6
+x1=7
 x2=10
 divx=5
 subdivx=8
@@ -44,21 +44,22 @@ unitx=1
 logx=1
 logy=0
 color=4
-node="Gain (dB); 20 v(out) log10() *"}
+node="Gain (dB); 20 v(out) log10() *"
+linewidth_mult=3}
 T {tcleval(gmIDN: [to_eng [xschem raw value gmIDn 0]])} -20 -580 0 0 0.3 0.3 {floater=1}
 T {Calculated Parameters} -20 -620 0 0 0.3 0.3 {floater=1}
 T {tcleval(VDSatN: [to_eng [xschem raw value vdsatn 0]])} -20 -550 0 0 0.3 0.3 {floater=1}
-T {tcleval(Gain max: [to_eng [xschem raw value gainmax_db 0]] dB)} -20 -370 0 0 0.3 0.3 {floater=1}
+T {tcleval(Gain max: [to_eng [xschem raw value gainmax_db 0]] dB)} 40 -360 0 0 0.3 0.3 {floater=1}
 T {tcleval(IDN: [to_eng [xschem raw value idn 0]])} -20 -520 0 0 0.3 0.3 {floater=1}
-T {Measured Parameters} -20 -400 0 0 0.3 0.3 {floater=1}
+T {Measured Parameters} 40 -390 0 0 0.3 0.3 {floater=1}
 T {tcleval(gmIDNB: [to_eng [xschem raw value gmIDnb 0]])} 160 -580 0 0 0.3 0.3 {floater=1}
 T {tcleval(VDSatNB: [to_eng [xschem raw value vdsatnb 0]])} 160 -550 0 0 0.3 0.3 {floater=1}
 T {tcleval(IDNB: [to_eng [xschem raw value idnb 0]])} 160 -520 0 0 0.3 0.3 {floater=1}
-T {tcleval(GBW: [to_eng [xschem raw value gbw 0]] dB)} 180 -340 0 0 0.3 0.3 {floater=1}
+T {tcleval(GBW: [to_eng [xschem raw value gbw 0]] dB)} 240 -330 0 0 0.3 0.3 {floater=1}
 T {tcleval(Av: [to_eng [xschem raw value av 0]])} -20 -480 0 0 0.3 0.3 {floater=1}
 T {tcleval(Av: [to_eng 20*log10([xschem raw value av 0])] dB)} 160 -480 0 0 0.3 0.3 {floater=1}
-T {tcleval(Peak Freq: [to_eng [xschem raw value peak_freq 0]] Hz)} -20 -340 0 0 0.3 0.3 {floater=1}
-T {tcleval(Gain min: [to_eng [xschem raw value gainmin_db 0]] dB)} 180 -370 0 0 0.3 0.3 {floater=1}
+T {tcleval(Peak Freq: [to_eng [xschem raw value peak_freq 0]] Hz)} 40 -330 0 0 0.3 0.3 {floater=1}
+T {tcleval(Gain min: [to_eng [xschem raw value gainmin_db 0]] dB)} 240 -360 0 0 0.3 0.3 {floater=1}
 N -600 -260 -600 -230 {lab=#net1}
 N -490 40 -440 40 {lab=VBN}
 N -490 40 -490 70 {lab=VBN}
@@ -173,7 +174,7 @@ value="
 **** interactive sim
 .control
   op
-  ac dec 50 1Meg 10G
+  ac dec 50 10Meg 10G
   let gmn = @m.xm1.m0[gm]
   let gdsn = @m.xm1.m0[gds]
   let idn = @m.xm1.m0[id]

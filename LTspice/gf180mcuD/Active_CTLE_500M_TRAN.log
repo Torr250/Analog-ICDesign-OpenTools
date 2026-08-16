@@ -1,0 +1,19 @@
+LTspice 26.0.2 for Windows
+Circuit: C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\Active_CTLE_500M_TRAN.net
+Start Time: Fri Aug 14 11:45:58 2026
+Options:logopinfo baudrate={BitRate}
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Direct Newton iteration succeeded in finding operating point.
+Total elapsed time: 2.875 seconds.
+
+Files loaded:
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\Active_CTLE_500M_TRAN.net
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\design.ngspice
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\sm141064.ngspice
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\gf180mcuD_ltspice.lib
+C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\gf180mcuD\tline_m10at500MHz.sp
+
