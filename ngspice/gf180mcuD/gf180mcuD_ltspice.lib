@@ -1,0 +1,115 @@
+***********************************************
+****gf180mcuD transistor models for ltspice****
+***********************************************
+*Minor changes to sm141064.ngspice to make it work
+*Import xnch.asy and xpch.asy symbols
+*Change the subcircuit definition to the desired transistor
+*
+* To use add the following libraries to Ltspice
+*.include design.ngspice
+*.lib "sm141064.ngspice" <corner>
+*.lib gf180mcuD_ltspice.lib
+*
+*Corner can be: typical, ss, ff, sf, fs, statistical
+*
+*
+*****Monte Carlo Simulations********************
+*The PDK allows to simulate mismatch and/or process variation:
+************************************************
+*Process variation and mismatch:
+*.lib "sm141064.ngspice" statistical
+*.param sw_stat_global=1
+*.param sw_stat_mismatch=1
+*.param mc_skew = 3
+*.param res_mc_skew = 3
+*.param cap_mc_skew = 3
+*.param fnoicor = 0
+*Note you need to comment or remove .include design.ngspice
+************************************************
+*Process variation:
+**.lib "sm141064.ngspice" statistical
+*.param sw_stat_global=1
+*.param sw_stat_mismatch=0
+*.param mc_skew = 3
+*.param res_mc_skew = 3
+*.param cap_mc_skew = 3
+*.param fnoicor = 0
+*Note you need to comment or remove .include design.ngspice
+************************************************
+*Mismatch
+*.lib "sm141064.ngspice" typical
+*.param sw_stat_global=1
+*.param sw_stat_mismatch=1
+*.param mc_skew = 3
+*.param res_mc_skew = 3
+*.param cap_mc_skew = 3
+*.param fnoicor = 0
+*Note you need to comment or remove .include design.ngspice
+************************************************
+*Modified by Adan Torralba
+*
+* 2026/08/11 Initial Release
+*
+***********************************************
+*Transistor definitions with perimeter and area calculations
+
+.subckt xnfet_03v3 D G S B
+.param l=0.28u w=2u m=1 nf=1
+.param ad='int((nf+1)/2) * W/nf * 0.18u'
+.param pd='int((nf+1)/2) * W/nf * 0.18u'
+.param as=int((nf+2)/2) * W/nf * 0.18u
+.param ps=int((nf+2)/2) * W/nf * 0.18u
+.param nrd='0.18u / W' nrs='0.18u / W'
+X1 D G S B nfet_03v3 l='l' w='w' ad='ad' as='as' pd='pd' ps='ps' m='m' nrd='nrd' nrs='nrs'
+.ends
+
+.subckt xpfet_03v3 D G S B
+.param l=0.28u w=2u m=1 nf=1
+.param ad='int((nf+1)/2) * W/nf * 0.18u'
+.param pd='int((nf+1)/2) * W/nf * 0.18u'
+.param as=int((nf+2)/2) * W/nf * 0.18u
+.param ps=int((nf+2)/2) * W/nf * 0.18u
+.param nrd='0.18u / W' nrs='0.18u / W'
+X1 D G S B pfet_03v3 l='l' w='w' ad='ad' as='as' pd='pd' ps='ps' m='m' nrd='nrd' nrs='nrs'
+.ends
+
+.subckt xnfet_05v0 D G S B
+.param l=0.6u w=2u m=1 nf=1
+.param ad='int((nf+1)/2) * W/nf * 0.18u'
+.param pd='int((nf+1)/2) * W/nf * 0.18u'
+.param as=int((nf+2)/2) * W/nf * 0.18u
+.param ps=int((nf+2)/2) * W/nf * 0.18u
+.param nrd='0.18u / W' nrs='0.18u / W'
+X1 D G S B nfet_05v0 l='l' w='w' ad='ad' as='as' pd='pd' ps='ps' m='m' nrd='nrd' nrs='nrs'
+.ends
+
+.subckt xpfet_05v0 D G S B
+.param l=0.5u w=2u m=1 nf=1
+.param ad='int((nf+1)/2) * W/nf * 0.18u'
+.param pd='int((nf+1)/2) * W/nf * 0.18u'
+.param as=int((nf+2)/2) * W/nf * 0.18u
+.param ps=int((nf+2)/2) * W/nf * 0.18u
+.param nrd='0.18u / W' nrs='0.18u / W'
+X1 D G S B pfet_05v0 l='l' w='w' ad='ad' as='as' pd='pd' ps='ps' m='m' nrd='nrd' nrs='nrs'
+.ends
+
+
+.subckt xnfet_06v0 D G S B
+.param l=0.7u w=2u m=1 nf=1
+.param ad='int((nf+1)/2) * W/nf * 0.18u'
+.param pd='int((nf+1)/2) * W/nf * 0.18u'
+.param as=int((nf+2)/2) * W/nf * 0.18u
+.param ps=int((nf+2)/2) * W/nf * 0.18u
+.param nrd='0.18u / W' nrs='0.18u / W'
+X1 D G S B nfet_06v0 l='l' w='w' ad='ad' as='as' pd='pd' ps='ps' m='m' nrd='nrd' nrs='nrs'
+.ends
+
+.subckt xpfet_06v0 D G S B
+.param l=0.55u w=2u m=1 nf=1
+.param ad='int((nf+1)/2) * W/nf * 0.18u'
+.param pd='int((nf+1)/2) * W/nf * 0.18u'
+.param as=int((nf+2)/2) * W/nf * 0.18u
+.param ps=int((nf+2)/2) * W/nf * 0.18u
+.param nrd='0.18u / W' nrs='0.18u / W'
+X1 D G S B pfet_06v0 l='l' w='w' ad='ad' as='as' pd='pd' ps='ps' m='m' nrd='nrd' nrs='nrs'
+.ends

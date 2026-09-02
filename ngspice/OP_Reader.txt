@@ -1,0 +1,111 @@
+# ============================================================
+# Punto de operación — comparación LTspice vs ngspice
+# ============================================================
+import re
+import subprocess
+from pathlib import Path
+from spicelib.log.semi_dev_op_reader import opLogReader
+from prettytable import PrettyTable
+from si_prefix import si_format as num2eng
+
+
+def ngspice_op_reader(netlist_path, devices, params, ngspice_bin="ngspice"):
+    """
+    Corre un análisis .op en ngspice (modo batch) y extrae los parámetros
+    de punto de operación de los MOSFETs indicados, con el mismo formato
+    de salida que spicelib.opLogReader (para poder comparar directo).
+
+    netlist_path : ruta a un netlist ngspice terminado en .end, SIN bloque
+                   .control (se le agrega uno automáticamente)
+    devices      : dict {nombre_visible: ruta_jerárquica_ngspice}
+                   ej. {'u1:x1:m0': 'xu1.x1.m0', 'u2:x1:m0': 'xu2.x1.m0'}
+    params       : lista de parámetros BSIM4, en minúsculas
+    """
+    netlist_path = Path(netlist_path)
+    lines = netlist_path.read_text().splitlines()
+    netlist_body = "\n".join(l for l in lines if l.strip().lower() != ".end")
+
+    control_block = [".control", "op"]
+    for dev_path in devices.values():
+        for p in params:
+            control_block.append(f"print @m.{dev_path}[{p}]")
+    control_block += [".endc", ".end"]
+
+    tmp_netlist = netlist_path.with_suffix(".autop.cir")
+    tmp_netlist.write_text(netlist_body + "\n" + "\n".join(control_block) + "\n")
+
+    result = subprocess.run(
+        [ngspice_bin, "-b", str(tmp_netlist)], capture_output=True, text=True
+    )
+    out = result.stdout + result.stderr
+
+    pattern = re.compile(r"@m\.(\S+?)\[(\w+)\]\s*=\s*([-\d.eE+]+)")
+    raw = {}
+    for m in pattern.finditer(out):
+        dev_path, param, value = m.groups()
+        raw.setdefault(dev_path, {})[param.lower()] = float(value)
+
+    # Nombres de parámetro al estilo del log de LTspice (Id, Vgs, ...)
+    # NOTA: capbd/capbs (no cbd/cbs) son los parámetros BSIM4 correctos
+    # que reportan la capacitancia física de unión drenador/fuente-bulk.
+    # cbd/cbs en ngspice reportan otra cosa (capacitancia terminal-a-terminal
+    # del modelo de carga completo, mezclando overlap/Miller) y NO coinciden
+    # con el Cbd/Cbs que reporta LTspice.
+    mapping = {"id": "Id", "vgs": "Vgs", "vds": "Vds", "vbs": "Vbs",
+               "vth": "Vth", "vdsat": "Vdsat", "gm": "Gm", "gds": "Gds",
+               "gmbs": "Gmb", "capbd": "Cbd", "capbs": "Cbs"}
+
+    op_dict = {}
+    for name, path in devices.items():
+        if path.lower() not in raw:
+            raise RuntimeError(f"No se encontró '{path}' en la salida de ngspice:\n{out}")
+        op_dict[name] = {mapping.get(k, k): v for k, v in raw[path.lower()].items()}
+    return op_dict
+
+
+# --- Configuración ---
+NETLIST_NGSPICE = "inv_op_base.cir"     # netlist .op plano, sin .control, terminado en .end
+LOG_LTSPICE     = "Inverter_DCSweep.log"
+
+# Mapa nombre visible -> ruta jerárquica ngspice
+# (u1:x1:m0 en el log de LTspice == xu1.x1.m0 en ngspice: Xtop.subckt_interno.instancia)
+devices = {"u1:x1:m0": "xu1.x1.m0", "u2:x1:m0": "xu2.x1.m0"}
+
+# capbd/capbs en vez de cbd/cbs -> ver nota de la LIMITACIÓN CONOCIDA abajo
+params = ["id", "vgs", "vds", "vbs", "vth", "vdsat", "gm", "gds", "gmbs", "capbd", "capbs"]
+pnames = ["Id", "Vgs", "Vds", "Vbs", "Vth", "Vdsat", "Gm", "Gds", "Gmb", "Cbd", "Cbs"]
+
+# --- Lectura de ambos simuladores ---
+lt_op = opLogReader(LOG_LTSPICE)["bsim4 mosfets"]
+ng_op = ngspice_op_reader(NETLIST_NGSPICE, devices, params)
+
+# --- Tabla comparativa ---
+table = PrettyTable()
+table.field_names = ["Parámetro"] + [f"{d} (LT)" for d in devices] + [f"{d} (NG)" for d in devices]
+
+for p in pnames:
+    row = [p]
+    row += [num2eng(lt_op[d][p]) for d in devices]
+    row += [num2eng(ng_op[d][p]) for d in devices]
+    table.add_row(row)
+
+print(table)
+
+# ============================================================
+# ⚠️ LIMITACIÓN CONOCIDA — Cbs en ngspice no es confiable en este circuito
+# ============================================================
+# En este netlist, la fuente y el bulk de cada transistor están conectados
+# al MISMO nodo (XU1: S=0,B=0 | XU2: S=VDD,B=VDD). Con esa topología,
+# ngspice calcula bien capbd (coincide con LTspice con <0.5% de error),
+# pero el valor que reporta para capbs (Cbs) deja de tener sentido físico
+# (aparece en el orden de 1e-4, típico de una conductancia, no de una
+# capacitancia en fF). Esto ocurrió para AMBOS transistores (U1 y U2),
+# consistente con que el problema es la unión fuente-bulk cortocircuitada
+# a nivel de nodo, no un error del netlist ni de spicelib.
+#
+# Recomendación: no usar el Cbs reportado por ngspice para este circuito.
+# Si se necesita ese valor validado, hay que romper el corto artificialmente
+# (ej. insertar una fuente de 0V de sondeo entre S y B solo para la medición)
+# y volver a extraer capbs con los nodos separados.
+print("\n[Nota] Cbs de ngspice no es válido en este circuito: S y B están "
+      "en el mismo nodo en ambos transistores (ver comentario en el código).")

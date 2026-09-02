@@ -1,0 +1,25 @@
+* Inversor CMOS gf180mcuD - AC (Bode) - version ngspice
+
+.param VDD=3.3
+
+V1 VDD 0 {VDD}
+V3 VIN 0 {VDD/2} AC 1
+
+XU1 VOUT VIN 0   0   xnfet_03v3 w=2u l=0.28u m=1
+XU2 VOUT VIN VDD VDD xpfet_03v3 w=4u l=0.28u m=1
+C1 VOUT 0 30f
+
+.include design.ngspice
+.lib sm141064.ngspice typical
+.include gf180mcuD_ltspice.lib
+
+.temp 27
+
+.ac dec 100 10Meg 10G
+
+.control
+run
+write inv_ac.raw
+.endc
+
+.end

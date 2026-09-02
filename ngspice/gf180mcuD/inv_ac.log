@@ -1,0 +1,29 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * inversor cmos gf180mcud - ac (bode) - version ngspice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 301
+ASCII raw file "inv_ac.raw"
+ASCII raw file "C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\ngspice\gf180mcuD\inv_ac.out"
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+No. of Data Columns : 6  
+
+No. of Data Rows : 301
+
+Total analysis time (seconds) = 0.0204996
+
+Total elapsed time (seconds) = 0.269 
+
+Total DRAM available = 7939.828 MB.
+DRAM currently available =  902.473 MB.
+Maximum ngspice program size =   24.059 MB.
+Current ngspice program size =   20.684 MB.
+
