@@ -1,0 +1,36 @@
+LTspice 26.0.2 for MacOS
+Circuit: /Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/CMOS_Inverter.net
+Start Time: Sat Oct  3 12:58:36 2026
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Direct Newton iteration succeeded in finding operating point.
+Total elapsed time: 0.669 seconds.
+
+Files loaded:
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/CMOS_Inverter.net
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice_tt.lib
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_01v8__tt.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_01v8__mismatch.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_01v8__tt.pm3.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_01v8__tt.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_01v8__mismatch.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_01v8__tt.pm3.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_01v8_lvt__tt.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_01v8_lvt__mismatch.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_01v8_lvt__tt.pm3.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_01v8_lvt__tt.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_01v8_lvt__mismatch.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_01v8_lvt__tt.pm3.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_g5v0d10v5__tt.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_g5v0d10v5__mismatch.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__nfet_g5v0d10v5__tt.pm3.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_g5v0d10v5__tt.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_g5v0d10v5__mismatch.corner.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/sky130_fd_pr__pfet_g5v0d10v5__tt.pm3.spice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools/LTspice/sky130A/sky130A_ltspice/lod.spice
+
+tphl=1.29565859959e-11 FROM 3.0150000004e-09 TO 3.02795658639e-09
+tplh=1.46641675609e-11 FROM 3.5449999996e-09 TO 3.55966416716e-09
