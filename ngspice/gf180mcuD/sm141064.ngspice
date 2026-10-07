@@ -567,27 +567,27 @@
  .param
 
 * MOSFET statistical parameters
- + mc_sig_vth2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_toxe2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xl2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xw2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xj2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
+ + mc_sig_vth2 = agauss(0, 1, 3)
+ + mc_toxe2 = agauss(0, 1, 3)
+ + mc_xl2 = agauss(0, 1, 3)
+ + mc_xw2 = agauss(0, 1, 3)
+ + mc_xj2 = agauss(0, 1, 3)
  
- + mc_sig_vthN2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_toxeN2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xlN2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xwN2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xjN2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_rdswN2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
+ + mc_sig_vthN2 = agauss(0, 1, 3)
+ + mc_toxeN2 = agauss(0, 1, 3)
+ + mc_xlN2 = agauss(0, 1, 3)
+ + mc_xwN2 = agauss(0, 1, 3)
+ + mc_xjN2 = agauss(0, 1, 3)
+ + mc_rdswN2 = agauss(0, 1, 3)
  
- + mc_sig_vthP2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_toxeP2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xlP2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xwP2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_xjP2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_rdswP2 = {0 + (1/3) * gauss(3)};agauss(0, 1, 3)
- + mc_rsh_nplus_u_temp={0 + (3.85/3) * gauss(3)};agauss(0, 3.85, 3)
- + mc_rsh_pplus_u_temp={0 + (10/3) * gauss(3)};agauss(0, 10, 3)
+ + mc_sig_vthP2 = agauss(0, 1, 3)
+ + mc_toxeP2 = agauss(0, 1, 3)
+ + mc_xlP2 = agauss(0, 1, 3)
+ + mc_xwP2 = agauss(0, 1, 3)
+ + mc_xjP2 = agauss(0, 1, 3)
+ + mc_rdswP2 = agauss(0, 1, 3)
+ + mc_rsh_nplus_u_temp=agauss(0, 3.85, 3)
+ + mc_rsh_pplus_u_temp=agauss(0, 10, 3)
 
  
  + mc_sig_vth = mc_sig_vth2
@@ -47054,14 +47054,14 @@ rfuse  in out  r='200*(1-pblow) + 900*pblow'
 
 .param
 + var_k='0.7071*par_k* 1e-06 / p_sqrtarea'
-+ mis_k = {0+gauss(var_k/1)} ;mis_k=agauss(0,var_k,1)
++ mis_k=agauss(0,var_k,1)
 
 .param
 + var_vth='0.7071*par_vth* 1e-06 / p_sqrtarea'
-+ mis_vth={0+gauss(var_vth/1)} ;mis_vth=agauss(0,var_vth,1)
++ mis_vth=agauss(0,var_vth,1)
 
-m0 d g s b nfet_03v3 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='nrs' sa='sa' sb='sb' nf='nf' sd='sd' m='m'
-*+delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' 
+m0 d g s b nfet_03v3 w=w l=l as=as ad=ad ps=ps pd=pd nrd=nrd nrs=nrs 
++delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' sa=sa sb=sb nf=nf sd=sd m=m
 .ends nfet_03v3
 *------------------------------------------------------------------------
 .subckt pfet_03v3 d g s b w=1e-5 l=2.8e-7 nf=1 m=1
@@ -47079,14 +47079,14 @@ m0 d g s b nfet_03v3 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='
 
 .param
 + var_k='0.7071*par_k* 1e-06 / p_sqrtarea'
-+ mis_k={0+ gauss(var_k/1)} ;mis_k=agauss(0,var_k,1)
++ mis_k=agauss(0,var_k,1)
 
 .param
 + var_vth='0.7071*par_vth* 1e-06 / p_sqrtarea'
-+ mis_vth={0+ gauss(var_vth/1)} ;mis_vth=agauss(0,var_vth,1)
++ mis_vth=agauss(0,var_vth,1)
 
-m0 d g s b pfet_03v3 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='nrs' sa='sa' sb='sb' nf='nf' sd='sd' m='m'
-*+delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' 
+m0 d g s b pfet_03v3 w=w l=l as=as ad=ad ps=ps pd=pd nrd=nrd nrs=nrs 
++delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' sa=sa sb=sb nf=nf sd=sd m=m
 .ends pfet_03v3
 
 *------------------------------------------------------------------------
@@ -47111,14 +47111,14 @@ m0 d g s b pfet_03v3 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='
 
 .param
 + var_k='0.7071*par_k* 1e-06 / p_sqrtarea'
-+ mis_k={0+gauss(var_k/1)} ;+ mis_k=agauss(0,var_k,1)
++ mis_k=agauss(0,var_k,1)
 
 .param
 + var_vth='0.7071*par_vth* 1e-06 / p_sqrtarea'
-+ mis_vth={0+gauss(var_vth/1)} ;+ mis_vth=agauss(0,var_vth,1)
++ mis_vth=agauss(0,var_vth,1)
 
-m0 d g s b nfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='nrs' sa='sa' sb='sb' nf='nf' sd='sd' m='m'
-*+delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' 
+m0 d g s b nfet_06v0 w=w l=l as=as ad=ad ps=ps pd=pd nrd=nrd nrs=nrs 
++delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' sa=sa sb=sb nf=nf sd=sd m=m
 .ends nfet_05v0
 
 *------------------------------------------------------------------------
@@ -47137,14 +47137,14 @@ m0 d g s b nfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='
 
 .param
 + var_k='0.7071*par_k* 1e-06 / p_sqrtarea'
-+ mis_k={0+gauss(var_k/1)} ;+ mis_k=agauss(0,var_k,1)
++ mis_k=agauss(0,var_k,1)
 
 .param
 + var_vth='0.7071*par_vth* 1e-06 / p_sqrtarea'
-+ mis_vth={0+gauss(var_vth/1)} ;+ mis_vth=agauss(0,var_vth,1)
++ mis_vth=agauss(0,var_vth,1)
 
-m0 d g s b nfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='nrs' sa='sa' sb='sb' nf='nf' sd='sd' m='m'
-*+delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' 
+m0 d g s b nfet_06v0 w=w l=l as=as ad=ad ps=ps pd=pd nrd=nrd nrs=nrs 
++delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' sa=sa sb=sb nf=nf sd=sd m=m
 .ends nfet_06v0
 
 *------------------------------------------------------------------------
@@ -47169,14 +47169,14 @@ m0 d g s b nfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='
 
 .param
 + var_k='0.7071*par_k* 1e-06 / p_sqrtarea'
-+ mis_k={0+ gauss(var_k/1)} ;mis_k=agauss(0,var_k,1)
++ mis_k=agauss(0,var_k,1)
 
 .param
 + var_vth='0.7071*par_vth* 1e-06 / p_sqrtarea'
-+ mis_vth={0+gauss(var_vth/1)} ;+ mis_vth=agauss(0,var_vth,1)
++ mis_vth=agauss(0,var_vth,1)
 
-m0 d g s b pfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='nrs' sa='sa' sb='sb' nf='nf' sd='sd' m='m'
-*+delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' 
+m0 d g s b pfet_06v0 w=w l=l as=as ad=ad ps=ps pd=pd nrd=nrd nrs=nrs 
++delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' sa=sa sb=sb nf=nf sd=sd m=m
 .ends pfet_05v0
 
 *--------------------------------------------------------------------------
@@ -47200,14 +47200,14 @@ m0 d g s b pfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='
 
 .param
 + var_k='0.7071*par_k* 1e-06 / p_sqrtarea'
-+ mis_k={0+gauss(var_k/1)} ;+ mis_k=agauss(0,var_k,1)
++ mis_k=agauss(0,var_k,1)
 
 .param
 + var_vth='0.7071*par_vth* 1e-06 / p_sqrtarea'
-+ mis_vth={0+gauss(var_vth/3)} ;+ mis_vth=agauss(0,var_vth,1)
++ mis_vth=agauss(0,var_vth,1)
 
-m0 d g s b pfet_06v0 w='w' l='l' as='as' ad='ad' ps='ps' pd='pd' nrd='nrd' nrs='nrs' sa='sa' sb='sb' nf='nf' sd='sd' m='m'
-*+delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' 
+m0 d g s b pfet_06v0 w=w l=l as=as ad=ad ps=ps pd=pd nrd=nrd nrs=nrs 
++delvto='mis_vth*sw_stat_mismatch' mulu0='1-mis_k*sw_stat_mismatch' sa=sa sb=sb nf=nf sd=sd m=m
 .ends pfet_06v0
 *------------------------------------------------------------------------
 
