@@ -1,0 +1,59 @@
+* DC_Sweep_Razavi -- port a ngspice del esquematico LTspice/Razavi/DC_Sweep_Razavi.asc
+* Misma topologia: fuentes E (VCVS, ganancia 1) para referir VGS/VDS al source,
+* V4/V8 = VSB (bulk del NMOS a -VSB, bulk del PMOS a VDD+VSB).
+*
+* Uso (desde esta carpeta):
+*   ngspice -b -o DC_Sweep_Razavi.log DC_Sweep_Razavi.cir
+* Salidas:
+*   DC_Sweep_Razavi.log          -> punto de operacion (.op) de ambos transistores
+*   DC_Sweep_Razavi_ngspice.raw  -> barrido DC (VDS de 0 a VDD)
+.include razavi_cmos_ngspice.lib
+
+.param VDD=1.8
+.param VGS={VDD/2} VDS={VDD/2} VSB=0
+
+V3 VDD 0 {VDD}
+V2 VGS 0 {VGS}
+V1 VDS 0 {VDS}
+
+* ---- NMOS (U1) ----
+E1 VGSN 0 VGS 0 1
+E4 VDSN 0 VDS 0 1
+V4 0 BN {VSB}
+XU1 VDSN VGSN 0 BN xnch l=0.18u w=1u
+
+* ---- PMOS (U2) ----
+E2 VDD VGSP VGS 0 1
+E3 VDD VDSP VDS 0 1
+V8 BP VDD {VSB}
+XU2 VDSP VGSP VDD BP xpch l=0.18u w=1u
+
+.options temp=27 tnom=27
+
+.control
+  set noaskquit
+  * ---- .op ----
+  op
+  print @m.xu1.m1[id] @m.xu2.m1[id]
+  print @m.xu1.m1[vgs] @m.xu2.m1[vgs]
+  print @m.xu1.m1[vds] @m.xu2.m1[vds]
+  print @m.xu1.m1[vbs] @m.xu2.m1[vbs]
+  print @m.xu1.m1[von] @m.xu2.m1[von]
+  print @m.xu1.m1[vdsat] @m.xu2.m1[vdsat]
+  print @m.xu1.m1[gm] @m.xu2.m1[gm]
+  print @m.xu1.m1[gds] @m.xu2.m1[gds]
+  print @m.xu1.m1[gmbs] @m.xu2.m1[gmbs]
+  print @m.xu1.m1[cbd] @m.xu2.m1[cbd]
+  print @m.xu1.m1[cbs] @m.xu2.m1[cbs]
+  print @m.xu1.m1[cgs] @m.xu2.m1[cgs]
+  print @m.xu1.m1[cgd] @m.xu2.m1[cgd]
+  print @m.xu1.m1[cgb] @m.xu2.m1[cgb]
+
+  * ---- .dc igual que en LTspice: V1 (VDS) de 0 a VDD, paso VDD/50 ----
+  * (los parametros de dispositivo solo se guardan por punto si se piden con save)
+  save v(vdsn) v(vgsn) @m.xu1.m1[id] @m.xu1.m1[gm] @m.xu1.m1[gds] @m.xu1.m1[gmbs] @m.xu1.m1[von] @m.xu1.m1[vdsat]
+  dc V1 0 1.8 0.036
+  write DC_Sweep_Razavi_ngspice.raw
+  quit
+.endc
+.end
