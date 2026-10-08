@@ -1,22 +1,24 @@
-LTspice 26.0.2 for Windows
-Circuit: C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\DC_Sweep_Razavi.net
-Start Time: Thu Oct  8 00:41:05 2026
+LTspice 26.0.1 for Windows
+Circuit: C:\Users\adant\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\DC_Sweep_Razavi.net
+Start Time: Thu Oct  8 09:23:37 2026
 Options:logopinfo
 solver = Normal
-Maximum thread count: 8
+Maximum thread count: 24
 tnom = 27
 temp = 27
-method = trap
+method = modified trap
+Compress1stOrder = true
+Compress2ndOrder = true
 Model "nch": Oxide thickness thinner than recommended for a level 1 MOSFET.
 Instance "u1:M1": Length shorter than recommended for a level 1 MOSFET.
 Instance "u1:M1": Width narrower than recommended for a level 1 MOSFET.
 Model "pch": Oxide thickness thinner than recommended for a level 1 MOSFET.
 Instance "u2:M1": Length shorter than recommended for a level 1 MOSFET.
 Instance "u2:M1": Width narrower than recommended for a level 1 MOSFET.
-Total elapsed time: 0.036 seconds.
+Total elapsed time: 0.026 seconds.
 
 Files loaded:
-C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\DC_Sweep_Razavi.net
-C:\Users\atorralba\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\razavi_cmos.lib
+C:\Users\adant\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\DC_Sweep_Razavi.net
+C:\Users\adant\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\razavi_cmos.lib
 
 id: Ix(U1:D) =7.56944427849e-05 at 0.9
