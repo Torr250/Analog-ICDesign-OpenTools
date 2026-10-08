@@ -1,30 +1,30 @@
 MANIFEST - PDK sky130A reducido
-generado: 2026-10-06T10:53:55
-origen:   C:\Users\adant\OneDrive\Documentos\GitHub\Analog-ICDesign-OpenTools_Private\ngspice\sky130A
-origen sha256 sky130.lib.spice: 8358930b0df8230930219fe671ce64f5c5be0edc0bd43bc203465feb8a322d74
+generado: 2026-10-07T20:52:02
+origen:   C:\Users\adant\Documents\GitHub\Analog-ICDesign-OpenTools_Private\ngspice\sky130A
+origen sha256 sky130.lib.spice: 48de7c677e2c6e7d09b2559279de9f818be71010a4aa933d728eb4db3b133c84
 dispositivos: nfet_01v8, nfet_01v8_lvt, nfet_g5v0d10v5, pfet_01v8, pfet_01v8_lvt, pfet_g5v0d10v5
 
 estado     sha256                                                            bytes  ruta
-MODIFICADO e2bbf667d3f15f8a6ffb836266613ff0396b51e9ecb381aa8ddd9715de2e6744     29142  libs.tech/combined/sky130.lib.spice
+MODIFICADO 866ceebc083a2f0213995abffd4c63ebb69dbe61e45625bbf316fc764b968276     29078  libs.tech/combined/sky130.lib.spice
 MODIFICADO 9f5c540a0300a5083e9ae001c61bb84a87a355cc40103824d4a1038656fbcc22       398  libs.tech/combined/continuous/models_fet.spice
-identico   44e777915268a28f916ba8e284fe6bb392afb9e315c53117ebceef4460b35db7      9838  libs.tech/combined/continuous/models_global.spice
-identico   7f6d6ad556c15afd87a04f8625a2ce583c8210f7c5dfa8653c84850f653d4677      1271  libs.tech/combined/continuous/parameters_cap_high.spice
-identico   7c60e51891ec488f463c7bbb1fec19bafd1e295fefcf6b577ff0e9f0f9c93f9c      1262  libs.tech/combined/continuous/parameters_cap_low.spice
-identico   e5d01a1aed7c8e7e7ed5d515c55071ba36481e455a8058a78bb12475b4999f1e      1187  libs.tech/combined/continuous/parameters_cap_nom.spice
-identico   dadc227d6189c16b18f09d46af2c58f11961091c212ec07ef7d1421454237c1e      4366  libs.tech/combined/continuous/parameters_fet_ff.spice
-identico   a4c354b539a9b59f541eed25e6a26f3bbdd7134bea92041cf411b1b939dd4cb6      4274  libs.tech/combined/continuous/parameters_fet_fs.spice
-identico   e22567ece3cd8f3a571eb3649c93d9659906bdc3b724a15ba9c88ad3c0d9d810      4273  libs.tech/combined/continuous/parameters_fet_sf.spice
-identico   e534f6ba1b4be14107bbe41c7ac24730ff11ddf871295d85f9290b3ada139343      4358  libs.tech/combined/continuous/parameters_fet_ss.spice
-identico   992ef646302127addc759fd32c0b0afcf57a29817d65c3544bee8c0fe3983f21      3852  libs.tech/combined/continuous/parameters_fet_tt.spice
-identico   dc1cccbdc56793ccdd604e3384b3937a720aefb62b6d0d2e82eb33e692b3b33e      3290  libs.tech/combined/continuous/parameters_res_high.spice
-identico   5184ceb04f306727fe32168089b859409061713f05880cd1ec7b200045e95505      3318  libs.tech/combined/continuous/parameters_res_low.spice
-identico   47a466fcc11d7fd7a55667119ad4fcfd8f6d1fc43472e68b5cc74a8f2831cdad      3127  libs.tech/combined/continuous/parameters_res_nom.spice
-identico   124b28b30becf38f6136eabbda104ac7436b53e2d961d0f3e8f1447e0010c279    290302  libs.tech/combined/continuous/models_fet/sky130_fd_pr__nfet_01v8.spice
-identico   3ef98cd9d94209fcc83bbe7ea57e520019fa6044951443e02ad614fe5fc6e432    226540  libs.tech/combined/continuous/models_fet/sky130_fd_pr__nfet_01v8_lvt.spice
-identico   310e6cb9104be908455949f4738607246579f8d4bca69d5abe7593cca3acd532    244380  libs.tech/combined/continuous/models_fet/sky130_fd_pr__nfet_g5v0d10v5.spice
-identico   73d42efab2cd827fc8b91b6156596ab7b89ab776500f5e16119b305aac1e0027    309509  libs.tech/combined/continuous/models_fet/sky130_fd_pr__pfet_01v8.spice
-identico   4203d6b97a74c9d51fced39a21f59b8dbd9ec2a7d35353fee4ad58509b225eee    207664  libs.tech/combined/continuous/models_fet/sky130_fd_pr__pfet_01v8_lvt.spice
-identico   99264cac7ea815fbbc3917488e64eaeb3a3045f0ff849932c09805365d8aa06a    243940  libs.tech/combined/continuous/models_fet/sky130_fd_pr__pfet_g5v0d10v5.spice
+identico   ac9df6f40a23e46d0aa65268e3006915e6da4e398017b562afbd17ce1d9e171f      9654  libs.tech/combined/continuous/models_global.spice
+identico   9aae3a661e7d9ba2ce151e5cca728a2ddc14ee8d73cd19717ed331016918d376      1250  libs.tech/combined/continuous/parameters_cap_high.spice
+identico   96ebe0bbb20519295bc7a23e29a388586bd249edd03e73c495dc032652f7fa76      1241  libs.tech/combined/continuous/parameters_cap_low.spice
+identico   74a1f0933e3220061816ba11b15a2192760a1c95e250e67ffd1bde6b8a5e5ae9      1166  libs.tech/combined/continuous/parameters_cap_nom.spice
+identico   b02aa2816444bc5f2c053c7ed35f178c344d03db914082df7c8556a4380aaf3e      4308  libs.tech/combined/continuous/parameters_fet_ff.spice
+identico   1f77a3d84a81d6c1fda2e3baf9c703d7a5b9e770937b4f5fb5122026db8a6a4c      4216  libs.tech/combined/continuous/parameters_fet_fs.spice
+identico   20be6d9570a0a3cde62f94e3c5771e907cff5862d2167dd3bbe404e17bc35a7b      4215  libs.tech/combined/continuous/parameters_fet_sf.spice
+identico   1ddb06ebec4e73ea630b9e6ae759db3410ee04da3678ace417cb3aa28e4f7880      4300  libs.tech/combined/continuous/parameters_fet_ss.spice
+identico   1079c5af023f59628e61e4749be70e94d165c9dde71b93b8da63cbf7a857f35f      3794  libs.tech/combined/continuous/parameters_fet_tt.spice
+identico   a776f09e5a7177c9450b7d05daa324261e2f133e78ece987f85be430787dc8be      3247  libs.tech/combined/continuous/parameters_res_high.spice
+identico   b75c5714f065f65be8b052338f9aa7418d69f005d64803e77e7735064715c238      3275  libs.tech/combined/continuous/parameters_res_low.spice
+identico   bc2401ac75547b56a48cf11c1ab5dedb37c72d518a8ef3d5abf5d2cdea083be6      3084  libs.tech/combined/continuous/parameters_res_nom.spice
+identico   e90265f1a1b6057fbb4324a2e5d2b4ff8d6e5028314daec563eda1defb3a91de    284941  libs.tech/combined/continuous/models_fet/sky130_fd_pr__nfet_01v8.spice
+identico   ab9b94cc75c46a8d422e626fce870fee5d7a312c2f09e50489b56537b0d61d9f    222234  libs.tech/combined/continuous/models_fet/sky130_fd_pr__nfet_01v8_lvt.spice
+identico   d076c45fe7b56b8f1f2f61bdc3092137bebb643e130d1bf2bd52eb11b35c8910    238868  libs.tech/combined/continuous/models_fet/sky130_fd_pr__nfet_g5v0d10v5.spice
+identico   8a0d819cb50c660122385f0da623683b855d38906824f2ca7ef7a83d961bda94    304034  libs.tech/combined/continuous/models_fet/sky130_fd_pr__pfet_01v8.spice
+identico   547a58975415a2c6dc633a3b3de5967b6c0fbcbea0ccfb7082235a666571f9a2    203436  libs.tech/combined/continuous/models_fet/sky130_fd_pr__pfet_01v8_lvt.spice
+identico   ef54b634c4cdf8a3347f5042a4d63c47006ef04223bbec43c7aacd1033f4577c    238641  libs.tech/combined/continuous/models_fet/sky130_fd_pr__pfet_g5v0d10v5.spice
 
 includes descartados de la lib original (26 distintos):
    49 x continuous/models_bjt.spice

@@ -1,0 +1,20 @@
+MANIFEST gf180mcuD LTspice
+fuente: sm141064.ngspice sha256=677822db50bf8968
+dispositivos: nfet_03v3 pfet_03v3 nfet_06v0 pfet_06v0
+
+archivo                                          bytes  lineas  sha256[:12]
+gf180mcuD_ltspice_tt.lib                        169113    7730  6254f4801f08
+gf180mcuD_ltspice_ss.lib                        170011    7730  280af63a8b3d
+gf180mcuD_ltspice_ff.lib                        169730    7730  0f85886b6e1b
+gf180mcuD_ltspice_sf.lib                        169980    7730  ca4c0ad5c20b
+gf180mcuD_ltspice_fs.lib                        169863    7730  0897258b1df9
+gf180mcuD_ltspice_tt_mm.lib                     169116    7730  a57e83e768e6
+gf180mcuD_ltspice_ss_mm.lib                     170014    7730  1bea88b28fef
+gf180mcuD_ltspice_ff_mm.lib                     169733    7730  0abb5091a974
+gf180mcuD_ltspice_sf_mm.lib                     169983    7730  531e3284b303
+gf180mcuD_ltspice_fs_mm.lib                     169866    7730  f572ad5356a9
+gf180mcuD_ltspice_mm.lib                        169113    7730  95a72718463c
+gf180mcuD_ltspice_mc.lib                        175734    7809  da82d61f82a3
+gf180mcuD_ltspice_mcmm.lib                      175736    7809  6292c1eaf83c
+
+problemas: ninguno

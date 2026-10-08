@@ -1,0 +1,464 @@
+* sky130A -> LTspice (generado por make_min_pdk.py --target ltspice)
+* Geometria en METROS (el PDK original usa micras). Parametros: l w nf ad as pd ps nrd nrs sa sb sd mult
+
+* Uso: .lib "sky130A_ltspice.lib" TT   (secciones: ver MANIFEST_ltspice.txt; mismos nombres que sky130.lib.spice + MM MCMM)
+* Archivo plano (p. ej. macOS): .lib "sky130A_ltspice_tt.lib"
+
+.LIB TT
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL TT
+
+.LIB SS
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL SS
+
+.LIB FF
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL FF
+
+.LIB SF
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL SF
+
+.LIB FS
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL FS
+
+.LIB MC
+.param MC_PR_SWITCH=1 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL MC
+
+.LIB MM
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL MM
+
+.LIB MCMM
+.param MC_PR_SWITCH=1 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL MCMM
+
+.LIB ll
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ll
+
+.LIB hh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL hh
+
+.LIB hl
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL hl
+
+.LIB lh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL lh
+
+.LIB ss_ll
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_ll
+
+.LIB ss_hl
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_hl
+
+.LIB ss_lh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_lh
+
+.LIB ss_hh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_hh
+
+.LIB sf_ll
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_ll
+
+.LIB sf_hl
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_hl
+
+.LIB sf_hh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_hh
+
+.LIB fs_ll
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_ll
+
+.LIB fs_hl
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_hl
+
+.LIB fs_lh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_lh
+
+.LIB fs_hh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_hh
+
+.LIB ff_ll
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_ll
+
+.LIB ff_hl
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_hl
+
+.LIB ff_lh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_lh
+
+.LIB ff_hh
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=0
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_hh
+
+.LIB tt_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL tt_mm
+
+.LIB sf_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_mm
+
+.LIB ff_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_mm
+
+.LIB ss_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_mm
+
+.LIB fs_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_mm
+
+.LIB ll_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ll_mm
+
+.LIB hh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL hh_mm
+
+.LIB hl_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL hl_mm
+
+.LIB lh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_tt.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL lh_mm
+
+.LIB ss_ll_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_ll_mm
+
+.LIB ss_hl_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_hl_mm
+
+.LIB ss_lh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_lh_mm
+
+.LIB ss_hh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ss.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ss_hh_mm
+
+.LIB sf_ll_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_ll_mm
+
+.LIB sf_hl_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_hl_mm
+
+.LIB sf_hh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_sf.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL sf_hh_mm
+
+.LIB fs_ll_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_ll_mm
+
+.LIB fs_hl_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_hl_mm
+
+.LIB fs_lh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_lh_mm
+
+.LIB fs_hh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_fs.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL fs_hh_mm
+
+.LIB ff_ll_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_ll_mm
+
+.LIB ff_hl_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_hl_mm
+
+.LIB ff_lh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_lh_mm
+
+.LIB ff_hh_mm
+.param MC_PR_SWITCH=0 MC_MM_SWITCH=1
+.param corner_factor=1 process_mc_factor=1 mismatch_factor=1
+.inc "sky130A_ltspice\params_ff.inc"
+.inc "sky130A_ltspice\globals.inc"
+.inc "sky130A_ltspice\models_fet.inc"
+.inc "sky130A_ltspice\wrappers.inc"
+.ENDL ff_hh_mm

@@ -1,7 +1,5 @@
-* Versión reducida generada por make_min_pdk.py (2026-10-06).
-* Dispositivos FET incluidos: nfet_01v8, nfet_01v8_lvt, nfet_g5v0d10v5, pfet_01v8, pfet_01v8_lvt, pfet_g5v0d10v5
-* Ver MANIFEST.txt en la raíz para el detalle de archivos.
-*
+* sky130A -> LTspice (generado por make_min_pdk.py --target ltspice)
+* Geometria en METROS (el PDK original usa micras). Parametros: l w nf ad as pd ps nrd nrs sa sb sd mult
 * Copyright 2022 The SkyWater PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
