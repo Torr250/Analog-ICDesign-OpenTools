@@ -1,0 +1,18 @@
+* Sección 'ff' extraída de ../sky130.lib.spice (make_min_pdk.py --split-sections)
+.lib ff
+.param MC_MM_SWITCH=0
+.param MC_PR_SWITCH=0
+.param corner_factor=1
+.param process_mc_factor=1
+.param mismatch_factor=1
+
+.include ../continuous/parameters_fet_ff.spice
+.include ../continuous/parameters_res_nom.spice
+.include ../continuous/parameters_cap_nom.spice
+
+* Include the model files
+.include ../continuous/models_global.spice
+.include ../continuous/models_fet.spice
+
+* Legacy discrete models (RF, vpp caps, SONOS, and SRAM)
+.endl ff

@@ -1,0 +1,114 @@
+# sky130A -> LTspice  (2026-10-06 21:31)
+dispositivos: nfet_01v8 nfet_01v8_lvt nfet_g5v0d10v5 pfet_01v8 pfet_01v8_lvt pfet_g5v0d10v5
+secciones: TT SS FF SF FS MC MM MCMM ll hh hl lh ss_ll ss_hl ss_lh ss_hh sf_ll sf_hl sf_hh fs_ll fs_hl fs_lh fs_hh ff_ll ff_hl ff_lh ff_hh tt_mm sf_mm ff_mm ss_mm fs_mm ll_mm hh_mm hl_mm lh_mm ss_ll_mm ss_hl_mm ss_lh_mm ss_hh_mm sf_ll_mm sf_hl_mm sf_hh_mm fs_ll_mm fs_hl_mm fs_lh_mm fs_hh_mm ff_ll_mm ff_hl_mm ff_lh_mm ff_hh_mm
+verificación estática: OK
+
+# archivos (sha256, tamaño)
+edb9bfe596d07981ca9f2f2e7d11d572a22ed3e35496e69f995f9b24897482ea       1297  sky130A_ltspice/globals.inc
+2293c4faf230b3adb9329619d96d35fc390483eaf6b17d699392257d9a75fad0    1525754  sky130A_ltspice/models_fet.inc
+f9a84c3a99c90baf521aa3e4311aeb15dbfe8c347f78c77d2bfc6b8393ca51f5       1173  sky130A_ltspice/params_ff.inc
+6bc7d8af782604c6635653b4549caca7765fd2cee6df7c3e2dd67f1b828d5000       1121  sky130A_ltspice/params_fs.inc
+c3a5aebcfffeecee6b9a304e5bc2638c118929a63a9bc9a09ded129b56c520fc       1128  sky130A_ltspice/params_sf.inc
+7da50d32932317fe92535fcb97a17bb9289418767620785f3fddc797b348c6d0       1167  sky130A_ltspice/params_ss.inc
+1e81ebd92088d8ac2043902e678f33397cd7933e9f505129b30ff750b44dc9fc       1073  sky130A_ltspice/params_tt.inc
+5258ffe53e488a3ff6830ce1d6be7d9eea522ad3d434748f588ad39a22330911       2610  sky130A_ltspice/wrappers.inc
+4898784246708d65e4ed124a91482f8298b4e872f3f5e5757c9b4990ec73d63f      14515  sky130A_ltspice.lib
+030df8fb4b646afcf5269c1407674435b19fe491f415a3276bcd70dbc0f7d99c        426  sky130A_ltspice_ff.lib
+030df8fb4b646afcf5269c1407674435b19fe491f415a3276bcd70dbc0f7d99c        426  sky130A_ltspice_ff_hh.lib
+88baf135717d1676d8f9d1eee280060a38a1dd9b3ceb32125932c09735aead48        426  sky130A_ltspice_ff_hh_mm.lib
+030df8fb4b646afcf5269c1407674435b19fe491f415a3276bcd70dbc0f7d99c        426  sky130A_ltspice_ff_hl.lib
+88baf135717d1676d8f9d1eee280060a38a1dd9b3ceb32125932c09735aead48        426  sky130A_ltspice_ff_hl_mm.lib
+030df8fb4b646afcf5269c1407674435b19fe491f415a3276bcd70dbc0f7d99c        426  sky130A_ltspice_ff_lh.lib
+88baf135717d1676d8f9d1eee280060a38a1dd9b3ceb32125932c09735aead48        426  sky130A_ltspice_ff_lh_mm.lib
+030df8fb4b646afcf5269c1407674435b19fe491f415a3276bcd70dbc0f7d99c        426  sky130A_ltspice_ff_ll.lib
+88baf135717d1676d8f9d1eee280060a38a1dd9b3ceb32125932c09735aead48        426  sky130A_ltspice_ff_ll_mm.lib
+88baf135717d1676d8f9d1eee280060a38a1dd9b3ceb32125932c09735aead48        426  sky130A_ltspice_ff_mm.lib
+52c21b10ad59c7bafc7530fa1a6bc36ec460362f2a0be37478ca3e1445951592        426  sky130A_ltspice_fs.lib
+52c21b10ad59c7bafc7530fa1a6bc36ec460362f2a0be37478ca3e1445951592        426  sky130A_ltspice_fs_hh.lib
+357466423217558077692850e63e1a439b0e42fb63ff31bf84f1b2e7b13465e6        426  sky130A_ltspice_fs_hh_mm.lib
+52c21b10ad59c7bafc7530fa1a6bc36ec460362f2a0be37478ca3e1445951592        426  sky130A_ltspice_fs_hl.lib
+357466423217558077692850e63e1a439b0e42fb63ff31bf84f1b2e7b13465e6        426  sky130A_ltspice_fs_hl_mm.lib
+52c21b10ad59c7bafc7530fa1a6bc36ec460362f2a0be37478ca3e1445951592        426  sky130A_ltspice_fs_lh.lib
+357466423217558077692850e63e1a439b0e42fb63ff31bf84f1b2e7b13465e6        426  sky130A_ltspice_fs_lh_mm.lib
+52c21b10ad59c7bafc7530fa1a6bc36ec460362f2a0be37478ca3e1445951592        426  sky130A_ltspice_fs_ll.lib
+357466423217558077692850e63e1a439b0e42fb63ff31bf84f1b2e7b13465e6        426  sky130A_ltspice_fs_ll_mm.lib
+357466423217558077692850e63e1a439b0e42fb63ff31bf84f1b2e7b13465e6        426  sky130A_ltspice_fs_mm.lib
+c8285983d8b87ae6aa60c6f7f700375614684f3a690936362040c8fee7260d64        426  sky130A_ltspice_hh.lib
+d8e47c928e3ca3071cd74361609f2a7f992b9981d10952d1b69fadeb476af88d        426  sky130A_ltspice_hh_mm.lib
+c8285983d8b87ae6aa60c6f7f700375614684f3a690936362040c8fee7260d64        426  sky130A_ltspice_hl.lib
+d8e47c928e3ca3071cd74361609f2a7f992b9981d10952d1b69fadeb476af88d        426  sky130A_ltspice_hl_mm.lib
+c8285983d8b87ae6aa60c6f7f700375614684f3a690936362040c8fee7260d64        426  sky130A_ltspice_lh.lib
+d8e47c928e3ca3071cd74361609f2a7f992b9981d10952d1b69fadeb476af88d        426  sky130A_ltspice_lh_mm.lib
+c8285983d8b87ae6aa60c6f7f700375614684f3a690936362040c8fee7260d64        426  sky130A_ltspice_ll.lib
+d8e47c928e3ca3071cd74361609f2a7f992b9981d10952d1b69fadeb476af88d        426  sky130A_ltspice_ll_mm.lib
+667fec052bedf870a1a2c769f968183c06c8fb490c0fde5e110a9d04e90a3fd2        426  sky130A_ltspice_mc.lib
+986c72fdf579809d86bae6a4b0ed5c9b668928d46f33daa33c64d0525e91e5e7        426  sky130A_ltspice_mcmm.lib
+d8e47c928e3ca3071cd74361609f2a7f992b9981d10952d1b69fadeb476af88d        426  sky130A_ltspice_mm.lib
+8bdccbdce053f49b1e1172928152ae44c1f0af15bff047e7227d20ba1e82f8eb        426  sky130A_ltspice_sf.lib
+8bdccbdce053f49b1e1172928152ae44c1f0af15bff047e7227d20ba1e82f8eb        426  sky130A_ltspice_sf_hh.lib
+72a5807aee2aa509bff0afd6c690a7e6e33eb38888ecbd1e0c3b05dfeab22548        426  sky130A_ltspice_sf_hh_mm.lib
+8bdccbdce053f49b1e1172928152ae44c1f0af15bff047e7227d20ba1e82f8eb        426  sky130A_ltspice_sf_hl.lib
+72a5807aee2aa509bff0afd6c690a7e6e33eb38888ecbd1e0c3b05dfeab22548        426  sky130A_ltspice_sf_hl_mm.lib
+8bdccbdce053f49b1e1172928152ae44c1f0af15bff047e7227d20ba1e82f8eb        426  sky130A_ltspice_sf_ll.lib
+72a5807aee2aa509bff0afd6c690a7e6e33eb38888ecbd1e0c3b05dfeab22548        426  sky130A_ltspice_sf_ll_mm.lib
+72a5807aee2aa509bff0afd6c690a7e6e33eb38888ecbd1e0c3b05dfeab22548        426  sky130A_ltspice_sf_mm.lib
+3411f527b235e232fac125dc0eb510e66adcff950d5e4e36c72570875f3e21e7        426  sky130A_ltspice_ss.lib
+3411f527b235e232fac125dc0eb510e66adcff950d5e4e36c72570875f3e21e7        426  sky130A_ltspice_ss_hh.lib
+464ac0fbd9b5d3666398e9c6d567d3f4b5a6a72cbd22828341128568ceaafbe9        426  sky130A_ltspice_ss_hh_mm.lib
+3411f527b235e232fac125dc0eb510e66adcff950d5e4e36c72570875f3e21e7        426  sky130A_ltspice_ss_hl.lib
+464ac0fbd9b5d3666398e9c6d567d3f4b5a6a72cbd22828341128568ceaafbe9        426  sky130A_ltspice_ss_hl_mm.lib
+3411f527b235e232fac125dc0eb510e66adcff950d5e4e36c72570875f3e21e7        426  sky130A_ltspice_ss_lh.lib
+464ac0fbd9b5d3666398e9c6d567d3f4b5a6a72cbd22828341128568ceaafbe9        426  sky130A_ltspice_ss_lh_mm.lib
+3411f527b235e232fac125dc0eb510e66adcff950d5e4e36c72570875f3e21e7        426  sky130A_ltspice_ss_ll.lib
+464ac0fbd9b5d3666398e9c6d567d3f4b5a6a72cbd22828341128568ceaafbe9        426  sky130A_ltspice_ss_ll_mm.lib
+464ac0fbd9b5d3666398e9c6d567d3f4b5a6a72cbd22828341128568ceaafbe9        426  sky130A_ltspice_ss_mm.lib
+c8285983d8b87ae6aa60c6f7f700375614684f3a690936362040c8fee7260d64        426  sky130A_ltspice_tt.lib
+d8e47c928e3ca3071cd74361609f2a7f992b9981d10952d1b69fadeb476af88d        426  sky130A_ltspice_tt_mm.lib
+
+# AVISO: L en borde de bin (ver README_ltspice.md y check_bin_edges.py)
+  dispositivo        L_borde(um)  LT/ng(sens. sw_polycd)  severidad
+  nfet_01v8               0.15                    1.00  baja
+  nfet_01v8               0.18                    1.08  media
+  nfet_01v8               0.25                    0.35  alta
+  nfet_01v8                0.5                    0.69  alta
+  nfet_01v8                  1                    1.06  media
+  nfet_01v8                  2                    0.94  media
+  nfet_01v8                  4                    1.00  baja
+  nfet_01v8                  8                    1.01  baja
+  nfet_01v8_lvt           0.15                    1.00  baja
+  nfet_01v8_lvt           0.18                    0.66  alta
+  nfet_01v8_lvt           0.25                    0.58  alta
+  nfet_01v8_lvt            0.5                    1.00  baja
+  nfet_01v8_lvt              1                    1.07  media
+  nfet_01v8_lvt              2                   -0.58  alta
+  nfet_01v8_lvt              4                    0.84  media
+  nfet_01v8_lvt              8                    1.00  baja
+  pfet_01v8               0.15                    1.00  baja
+  pfet_01v8               0.18                    1.21  media
+  pfet_01v8               0.25                    1.54  alta
+  pfet_01v8                0.5                    1.36  alta
+  pfet_01v8                  1                    1.06  media
+  pfet_01v8                  2                    0.92  media
+  pfet_01v8                  4                    1.05  media
+  pfet_01v8                  8                    0.94  media
+  pfet_01v8_lvt           0.35                    1.00  baja
+  pfet_01v8_lvt            0.5                    1.07  media
+  pfet_01v8_lvt              1                    1.14  media
+  pfet_01v8_lvt            1.5                    0.93  media
+  pfet_01v8_lvt              2                    0.99  baja
+  pfet_01v8_lvt              4                    1.00  baja
+  pfet_01v8_lvt              8                    0.97  baja
+  nfet_g5v0d10v5           0.5                    1.00  baja
+  nfet_g5v0d10v5           0.6                    0.91  media
+  nfet_g5v0d10v5           0.8                    0.90  media
+  nfet_g5v0d10v5             1                    1.03  baja
+  nfet_g5v0d10v5             2                    1.02  baja
+  nfet_g5v0d10v5             4                    1.01  baja
+  nfet_g5v0d10v5             8                    0.99  baja
+  pfet_g5v0d10v5           0.5                    1.00  baja
+  pfet_g5v0d10v5           0.6                    0.98  baja
+  pfet_g5v0d10v5           0.8                    0.84  media
+  pfet_g5v0d10v5             1                    0.47  alta
+  pfet_g5v0d10v5             2                    1.02  baja
+  pfet_g5v0d10v5             4                    1.02  baja
+  pfet_g5v0d10v5             8                    0.95  media
