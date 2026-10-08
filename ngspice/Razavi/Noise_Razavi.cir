@@ -1,0 +1,71 @@
+* Noise_Razavi -- circuitos para simulacion de ruido con el modelo Level 1 de Razavi
+*
+* Tres fuentes comunes (source a tierra, VGS = 0.9 V, W=1u, L=0.18u):
+*   A) Carga ideal sin ruido: inductor enorme (corto en DC, abierto en AC) desde una
+*      fuente de 0.9 V (VDS = 0.9 V). Aisla el ruido del transistor:
+*      S_out = S_id / gds^2  y  S_in = S_id / gm^2.
+*   B) Carga resistiva RD = 10k desde VDD = 1.8 V (amplificador de Razavi, cap. 7):
+*      el ruido de RD se suma al del transistor.
+*   C) Igual que A, con el modelo nch_rs (rd = rs = 200 ohm): ruido de las resistencias serie.
+*
+* Uso (desde esta carpeta):
+*   ngspice -b -o Noise_Razavi.log Noise_Razavi.cir
+* Salidas:
+*   Noise_Razavi.log                -> .op de los 3 transistores + ruido total integrado
+*   Noise_A.raw, Noise_B.raw, Noise_C.raw -> densidad espectral (entrada y salida)
+.include razavi_cmos_noise.lib
+
+.param VGSB=0.9 RD=10k VDD=1.8
+
+* ---- A) carga ideal ----
+Vda vda 0 0.9
+Lda vda da 1e9
+Vga ga 0 dc {VGSB} ac 1
+XU1 da ga 0 0 xnch l=0.18u w=1u
+
+* ---- B) carga resistiva ----
+Vddb vddb 0 {VDD}
+RDb vddb db {RD}
+Vgb gb 0 dc {VGSB} ac 1
+XU2 db gb 0 0 xnch l=0.18u w=1u
+
+* ---- C) carga ideal con rd, rs ----
+Vdc vdc 0 0.9
+Ldc vdc dc 1e9
+Vgc gc 0 dc {VGSB} ac 1
+XU3 dc gc 0 0 xnchr l=0.18u w=1u
+
+.options temp=27 tnom=27
+
+.control
+  set noaskquit
+  * ---- .op ----
+  op
+  print @m.xu1.m1[id] @m.xu2.m1[id] @m.xu3.m1[id]
+  print @m.xu1.m1[vds] @m.xu2.m1[vds] @m.xu3.m1[vds]
+  print @m.xu1.m1[gm] @m.xu2.m1[gm] @m.xu3.m1[gm]
+  print @m.xu1.m1[gds] @m.xu2.m1[gds] @m.xu3.m1[gds]
+  print @m.xu1.m1[gmbs] @m.xu2.m1[gmbs] @m.xu3.m1[gmbs]
+
+  * ---- .noise: 1 Hz a 100 MHz, 20 puntos por decada ----
+  * Cada corrida crea dos graficas: noiseN (espectro) y noiseN+1 (totales integrados)
+  noise v(da) Vga dec 20 1 1e8
+  setplot noise1
+  write Noise_A.raw inoise_spectrum onoise_spectrum
+  setplot noise2
+  print inoise_total onoise_total
+
+  noise v(db) Vgb dec 20 1 1e8
+  setplot noise3
+  write Noise_B.raw inoise_spectrum onoise_spectrum
+  setplot noise4
+  print inoise_total onoise_total
+
+  noise v(dc) Vgc dec 20 1 1e8
+  setplot noise5
+  write Noise_C.raw inoise_spectrum onoise_spectrum
+  setplot noise6
+  print inoise_total onoise_total
+  quit
+.endc
+.end

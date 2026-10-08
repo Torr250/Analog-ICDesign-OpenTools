@@ -1,0 +1,57 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * noise_razavi -- circuitos para simulacion de ruido con el modelo level 1 de razavi
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+@m.xu1.m1[id] = 7.569445e-05
+@m.xu2.m1[id] = 7.662338e-05
+@m.xu3.m1[id] = 6.986628e-05
+@m.xu1.m1[vds] = 9.000000e-01
+@m.xu2.m1[vds] = 1.033766e+00
+@m.xu3.m1[vds] = 8.720535e-01
+@m.xu1.m1[gm] = 3.027778e-04
+@m.xu2.m1[gm] = 3.064935e-04
+@m.xu3.m1[gm] = 2.905149e-04
+@m.xu1.m1[gds] = 6.944444e-06
+@m.xu2.m1[gds] = 6.944444e-06
+@m.xu3.m1[gds] = 6.426227e-06
+@m.xu1.m1[gmbs] = 1.105588e-04
+@m.xu2.m1[gmbs] = 1.119156e-04
+@m.xu3.m1[gmbs] = 1.036936e-04
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 161
+
+No. of Data Rows : 1
+binary raw file "Noise_A.raw"
+inoise_total = 6.090946e-05
+onoise_total = 2.643215e-03
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 161
+
+No. of Data Rows : 1
+binary raw file "Noise_B.raw"
+inoise_total = 7.366218e-05
+onoise_total = 2.111053e-04
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 161
+
+No. of Data Rows : 1
+binary raw file "Noise_C.raw"
+inoise_total = 6.706023e-05
+onoise_total = 3.012337e-03
+ngspice-42 done
