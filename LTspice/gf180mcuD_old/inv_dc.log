@@ -1,0 +1,17 @@
+LTspice 26.0.2 for MacOS
+Circuit: /Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/inv_dc.net
+Start Time: Fri Oct  2 19:18:50 2026
+Options:logopinfo
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Total elapsed time: 0.126 seconds.
+
+Files loaded:
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/inv_dc.net
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/design.ngspice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/sm141064.ngspice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/gf180mcuD_ltspice.lib
+

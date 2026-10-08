@@ -1,0 +1,50 @@
+LTspice 26.0.2 for MacOS
+Circuit: /Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/inv_ac_mc.net
+Start Time: Fri Oct  2 20:11:38 2026
+Options:logopinfo
+
+.step x=1
+solver = Normal
+Maximum thread count: 8
+tnom = 27
+temp = 27
+method = trap
+Warning: Rdsw = -18.8941 was negative. Setting to zero.
+Direct Newton iteration succeeded in finding operating point.
+Semiconductor Device Operating Points:
+                        --- BSIM4 MOSFETS ---
+Name:    u1:x1:m0    u2:x1:m0
+Model: nfet_03v3.9 pfet_03v3.9
+Id:      1.23e-04   -1.23e-04
+Vgs:     1.65e+00   -1.65e+00
+Vds:     4.30e-01   -2.87e+00
+Vbs:     0.00e+00    0.00e+00
+Vth:     7.22e-01   -7.56e-01
+Vdsat:   6.82e-01   -7.18e-01
+Gm:      1.60e-04    2.43e-04
+Gds:     1.58e-04    1.86e-06
+Gmb      6.83e-05    1.19e-04
+Cbd:     1.34e-15    2.59e-15
+Cbs:     1.55e-15    3.90e-15
+
+
+
+.step x=2
+Direct Newton iteration succeeded in finding operating point.
+Total elapsed time: 0.197 seconds.
+
+Files loaded:
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/inv_ac_mc.net
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/sm141064.ngspice
+/Users/atorralba/Documents/GitHub/Analog-ICDesign-OpenTools_Private/LTspice/gf180mcuD/gf180mcuD_ltspice.lib
+
+
+Measurement: gain
+  step	db(v(vout)) 	at
+     1	(29.0402469937dB,73.545359315°)	10000000
+     2	(28.8353271979dB,79.1359181683°)	10000000
+
+Measurement: max_gain
+  step	MAX(db(mag(V(vout))))	FROM	TO
+     1	(21.5089754221dB,180°)	10000000	10000000000
+     2	(21.8757697891dB,180°)	10000000	10000000000
