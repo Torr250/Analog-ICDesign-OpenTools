@@ -11,7 +11,7 @@ C1 VOUT 0 30f
 
 .include design.ngspice
 .lib sm141064.ngspice typical
-.include gf180mcuD_ltspice.lib
+.include gf180mcuD_wrapper.lib
 
 .temp 27
 

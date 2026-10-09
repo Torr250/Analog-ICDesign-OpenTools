@@ -8,7 +8,7 @@
 * To use add the following libraries to Ltspice
 *.include design.ngspice
 *.lib "sm141064.ngspice" <corner>
-*.lib gf180mcuD_ltspice.lib
+*.lib gf180mcuD_wrapper.lib
 *
 *Corner can be: typical, ss, ff, sf, fs, statistical
 *

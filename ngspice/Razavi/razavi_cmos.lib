@@ -1,7 +1,8 @@
-*Razavi Fundamentals Microelectronics CMOS Models
+*Razavi Fundamentals Microelectronics CMOS Models (version ngspice)
 *Technology CMOS 180nm
-* Libreria unica (modelo DC/AC + parametros de ruido). Los .MODEL son identicos a los de
-* ngspice/Razavi/razavi_cmos.lib; cambia solo la forma de declarar w, l, m en los subckt.
+* Libreria unica (modelo DC/AC + parametros de ruido). Diferencia vs. la version de LTspice:
+* los parametros w, l, m se declaran en la linea .subckt (en ngspice, un .param dentro del
+* subckt no se puede sobreescribir desde la instancia). Los .MODEL son identicos.
 * Parametros de ruido (didacticos, calibrados contra sky130 y gf180mcuD, ver ngspice/Razavi/Extraccion_KF_AF.ipynb):
 *   kf, af : ruido flicker del Level 1   S_id = kf * Id^af / (f * W * L * Cox^2)   [A^2/Hz]
 *            (el ruido termico del canal, 4kT*(2/3)*gm, ya existe por defecto en Level 1)
@@ -39,38 +40,17 @@
 +kf=3e-29 af=1
 +rd=200 rs=200
 
-.subckt xnch D G S B
-
-.param l=0.18u w=2u m=1
+.subckt xnch D G S B l=0.18u w=2u m=1
 .param wd = 0.48e-6
-.param ad = 'w*wd'
-.param as = 'w*wd'
-.param ps = '2*w+2*wd'
-.param pd = '2*w+2*wd'
-
-M1 D G S B nch l=l w=w ad=ad as=as pd=pd ps=ps m=m
+M1 D G S B nch l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
 .ends
 
-.subckt xpch D G S B
-
-.param l=0.18u w=2u m=1
+.subckt xpch D G S B l=0.18u w=2u m=1
 .param wd = 0.48e-6
-.param ad = 'w*wd'
-.param as = 'w*wd'
-.param ps = '2*w+2*wd'
-.param pd = '2*w+2*wd'
-
-M1 D G S B pch l=l w=w ad=ad as=as pd=pd ps=ps m=m
+M1 D G S B pch l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
 .ends
 
-.subckt xnchr D G S B
-
-.param l=0.18u w=2u m=1
+.subckt xnchr D G S B l=0.18u w=2u m=1
 .param wd = 0.48e-6
-.param ad = 'w*wd'
-.param as = 'w*wd'
-.param ps = '2*w+2*wd'
-.param pd = '2*w+2*wd'
-
-M1 D G S B nch_rs l=l w=w ad=ad as=as pd=pd ps=ps m=m
+M1 D G S B nch_rs l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
 .ends

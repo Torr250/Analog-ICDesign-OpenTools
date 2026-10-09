@@ -13,7 +13,7 @@
 * Salidas:
 *   Noise_Razavi.log                -> .op de los 3 transistores + ruido total integrado
 *   Noise_A.raw, Noise_B.raw, Noise_C.raw -> densidad espectral (entrada y salida)
-.include razavi_cmos_noise.lib
+.include razavi_cmos.lib
 
 .param VGSB=0.9 RD=10k VDD=1.8
 

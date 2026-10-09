@@ -7,7 +7,7 @@
 * Salidas:
 *   DC_Sweep_Razavi.log          -> punto de operacion (.op) de ambos transistores
 *   DC_Sweep_Razavi_ngspice.raw  -> barrido DC (VDS de 0 a VDD)
-.include razavi_cmos_ngspice.lib
+.include razavi_cmos.lib
 
 .param VDD=1.8
 .param VGS={VDD/2} VDS={VDD/2} VSB=0
