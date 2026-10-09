@@ -3,13 +3,11 @@
 * Libreria unica (modelo DC/AC + parametros de ruido). Los .MODEL son identicos a los de
 * ngspice/Razavi/razavi_cmos.lib; cambia solo la forma de declarar w, l, m en los subckt.
 * Parametros de ruido (didacticos, calibrados contra sky130 y gf180mcuD, ver ngspice/Razavi/Extraccion_KF_AF.ipynb):
-*   kf, af : ruido flicker del Level 1.
-*   OJO: LTspice y ngspice NO usan la misma formula para kf. Medido en LTspice (Noise_A/B/C.raw):
-*        S_vin,fl = kf / (f * W * L * Cox)     [V^2/Hz]  (referido a la entrada, no depende de Id)
-*     ngspice:  S_id,fl = kf * Id^af / (f * W * L * Cox^2)  ->  S_vin,fl = kf / (2*kp*W^2*Cox^2*(1+lambda*VDS) * f)
-*   Por eso el kf de esta libreria es distinto al de ngspice/Razavi/razavi_cmos.lib. Con W=1u, L=0.18u
-*   da el mismo ruido flicker en ambos simuladores (NMOS 43 uV/rtHz a 1 Hz, fc ~51 MHz;
-*   PMOS 21 uV/rtHz a 1 Hz, fc ~5.9 MHz). Para otra geometria hay que recalcular kf.
+*   kf, af : ruido flicker del Level 1   S_id = kf * Id^af / (f * W * L * Cox^2)   [A^2/Hz]
+*            (el ruido termico del canal, 4kT*(2/3)*gm, ya existe por defecto en Level 1)
+*   NMOS: kf = 3e-29    PMOS: kf = 3.5e-30    af = 1 en ambos
+*   Con W=1u, L=0.18u, Id~76uA la esquina 1/f queda en ~51 MHz (NMOS) y ~5.9 MHz (PMOS).
+*   Para una esquina mas baja (p. ej. ~1 MHz en NMOS) basta bajar kf NMOS a ~1e-30.
 *   Los kf/af NO afectan a las simulaciones DC/AC/transitorias, solo a .noise.
 * Variante nch_rs / xnchr: igual que nch con rd = rs = 200 ohm (ruido termico 4kT/R de cada una).
 
@@ -20,7 +18,7 @@
 +cgso = 9.548e-10 cgdo = 9.548e-10
 +cj=9.81e-4 cjsw=1.19e-10
 +mjsw=0 mj=0
-+kf=2.87e-24 af=1
++kf=3e-29 af=1
 
 .MODEL pch PMOS LEVEL = 1
 +kp=50u vto=-0.4
@@ -29,7 +27,7 @@
 +cgso = 9.548e-10 cgdo = 9.548e-10
 +cj=9.81e-4 cjsw=1.19e-10
 +mjsw=0 mj=0
-+kf=6.7e-25 af=1
++kf=3.5e-30 af=1
 
 .MODEL nch_rs NMOS LEVEL = 1
 +kp=100u vto=0.4
@@ -38,7 +36,7 @@
 +cgso = 9.548e-10 cgdo = 9.548e-10
 +cj=9.81e-4 cjsw=1.19e-10
 +mjsw=0 mj=0
-+kf=2.87e-24 af=1
++kf=3e-29 af=1
 +rd=200 rs=200
 
 .subckt xnch D G S B

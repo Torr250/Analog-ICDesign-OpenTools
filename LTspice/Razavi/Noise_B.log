@@ -1,6 +1,6 @@
 LTspice 26.0.1 for Windows
 Circuit: C:\Users\adant\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\Noise_B.net
-Start Time: Thu Oct  8 18:41:09 2026
+Start Time: Thu Oct  8 18:56:54 2026
 Options:logopinfo
 solver = Normal
 Maximum thread count: 24
@@ -36,7 +36,7 @@ Cgd:         0.00e+00
 Cgb:         0.00e+00
 
 
-Total elapsed time: 0.059 seconds.
+Total elapsed time: 0.057 seconds.
 
 Files loaded:
 C:\Users\adant\Documents\GitHub\Analog-ICDesign-OpenTools\LTspice\Razavi\Noise_B.net
