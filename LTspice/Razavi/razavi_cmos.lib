@@ -1,7 +1,7 @@
 *Razavi Fundamentals Microelectronics CMOS Models
 *Technology CMOS 180nm
 * Libreria unica (modelo DC/AC + parametros de ruido). Los .MODEL son identicos a los de
-* ngspice/Razavi/razavi_cmos.lib; cambia solo la forma de declarar w, l, m en los subckt.
+* ngspice/Razavi/razavi_cmos.lib excepto kf/af (ver abajo); cambia ademas la forma de declarar w, l, m en los subckt.
 * Parametros de ruido (didacticos, calibrados contra sky130 y gf180mcuD, ver ngspice/Razavi/Extraccion_KF_AF.ipynb):
 *   kf, af : ruido flicker del Level 1.
 *   OJO: LTspice y ngspice NO usan la misma formula para kf. Medido en LTspice (Noise_A/B/C.raw):
@@ -11,7 +11,7 @@
 *   da el mismo ruido flicker en ambos simuladores (NMOS 43 uV/rtHz a 1 Hz, fc ~51 MHz;
 *   PMOS 21 uV/rtHz a 1 Hz, fc ~5.9 MHz). Para otra geometria hay que recalcular kf.
 *   Los kf/af NO afectan a las simulaciones DC/AC/transitorias, solo a .noise.
-* Variante nch_rs / xnchr: igual que nch con rd = rs = 200 ohm (ruido termico 4kT/R de cada una).
+* Variante nch_rs / xnchr (y pch_rs / xpchr): igual que nch (pch) con rd = rs = 200 ohm (ruido termico 4kT/R de cada una).
 
 .MODEL nch NMOS LEVEL = 1
 +kp=100u vto=0.4
@@ -39,6 +39,16 @@
 +cj=9.81e-4 cjsw=1.19e-10
 +mjsw=0 mj=0
 +kf=2.87e-24 af=1
++rd=200 rs=200
+
+.MODEL pch_rs PMOS LEVEL = 1
++kp=50u vto=-0.4
++gamma=0.4 lambda=0.1
++phi=0.3 tox=40e-10
++cgso = 9.548e-10 cgdo = 9.548e-10
++cj=9.81e-4 cjsw=1.19e-10
++mjsw=0 mj=0
++kf=6.7e-25 af=1
 +rd=200 rs=200
 
 .subckt xnch D G S B
@@ -75,4 +85,16 @@ M1 D G S B pch l=l w=w ad=ad as=as pd=pd ps=ps m=m
 .param pd = '2*w+2*wd'
 
 M1 D G S B nch_rs l=l w=w ad=ad as=as pd=pd ps=ps m=m
+.ends
+
+.subckt xpchr D G S B
+
+.param l=0.18u w=2u m=1
+.param wd = 0.48e-6
+.param ad = 'w*wd'
+.param as = 'w*wd'
+.param ps = '2*w+2*wd'
+.param pd = '2*w+2*wd'
+
+M1 D G S B pch_rs l=l w=w ad=ad as=as pd=pd ps=ps m=m
 .ends

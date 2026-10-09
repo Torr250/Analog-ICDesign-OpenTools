@@ -10,7 +10,7 @@
 *   Con W=1u, L=0.18u, Id~76uA la esquina 1/f queda en ~51 MHz (NMOS) y ~5.9 MHz (PMOS).
 *   Para una esquina mas baja (p. ej. ~1 MHz en NMOS) basta bajar kf NMOS a ~1e-30.
 *   Los kf/af NO afectan a las simulaciones DC/AC/transitorias, solo a .noise.
-* Variante nch_rs / xnchr: igual que nch con rd = rs = 200 ohm (ruido termico 4kT/R de cada una).
+* Variante nch_rs / xnchr (y pch_rs / xpchr): igual que nch (pch) con rd = rs = 200 ohm (ruido termico 4kT/R de cada una).
 
 .MODEL nch NMOS LEVEL = 1
 +kp=100u vto=0.4
@@ -40,6 +40,16 @@
 +kf=3e-29 af=1
 +rd=200 rs=200
 
+.MODEL pch_rs PMOS LEVEL = 1
++kp=50u vto=-0.4
++gamma=0.4 lambda=0.1
++phi=0.3 tox=40e-10
++cgso = 9.548e-10 cgdo = 9.548e-10
++cj=9.81e-4 cjsw=1.19e-10
++mjsw=0 mj=0
++kf=3.5e-30 af=1
++rd=200 rs=200
+
 .subckt xnch D G S B l=0.18u w=2u m=1
 .param wd = 0.48e-6
 M1 D G S B nch l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
@@ -53,4 +63,9 @@ M1 D G S B pch l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
 .subckt xnchr D G S B l=0.18u w=2u m=1
 .param wd = 0.48e-6
 M1 D G S B nch_rs l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
+.ends
+
+.subckt xpchr D G S B l=0.18u w=2u m=1
+.param wd = 0.48e-6
+M1 D G S B pch_rs l={l} w={w} ad={w*wd} as={w*wd} pd={2*w+2*wd} ps={2*w+2*wd} m={m}
 .ends

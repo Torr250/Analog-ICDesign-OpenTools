@@ -1,0 +1,68 @@
+* Noise_Razavi_PMOS -- circuitos para simulacion de ruido del PMOS con el modelo Level 1 de Razavi
+*
+* Version PMOS de Noise_Razavi.cir. Tres fuentes comunes (fuente a VDD = 1.8 V, |VGS| = 0.9 V,
+* W=1u, L=0.18u, como el PMOS de DC_Sweep_Razavi.cir):
+*   PA) Carga ideal sin ruido: inductor enorme (corto en DC, abierto en AC) desde una fuente de
+*       0.9 V (|VDS| = 0.9 V). Aisla el ruido del transistor.
+*   PB) Carga resistiva RD = 10k a tierra: el ruido de RD se suma al del transistor.
+*   PC) Igual que PA, con el modelo pch_rs (rd = rs = 200 ohm): ruido de las resistencias serie.
+*
+* Uso (desde esta carpeta):
+*   ngspice -b -o Noise_Razavi_PMOS.log Noise_Razavi_PMOS.cir
+* Salidas:
+*   Noise_Razavi_PMOS.log -> .op de los 3 transistores + ruido total integrado
+*   Noise_PA.raw, Noise_PB.raw, Noise_PC.raw -> densidad espectral (entrada y salida)
+.include razavi_cmos.lib
+
+.param VDD=1.8 VGSB=0.9 RD=10k
+
+Vdd vdd 0 {VDD}
+
+* ---- PA) carga ideal ----
+Vdda vdda 0 {VDD-0.9}
+Lda vdda da 1e9
+Vga ga 0 dc {VDD-VGSB} ac 1
+XU1 da ga vdd vdd xpch l=0.18u w=1u
+
+* ---- PB) carga resistiva ----
+RDb db 0 {RD}
+Vgb gb 0 dc {VDD-VGSB} ac 1
+XU2 db gb vdd vdd xpch l=0.18u w=1u
+
+* ---- PC) carga ideal con rd, rs ----
+Vdcc vdcc 0 {VDD-0.9}
+Ldc vdcc dc 1e9
+Vgc gc 0 dc {VDD-VGSB} ac 1
+XU3 dc gc vdd vdd xpchr l=0.18u w=1u
+
+.options temp=27 tnom=27
+
+.control
+  set noaskquit
+  op
+  print @m.xu1.m1[id] @m.xu2.m1[id] @m.xu3.m1[id]
+  print @m.xu1.m1[vds] @m.xu2.m1[vds] @m.xu3.m1[vds]
+  print @m.xu1.m1[gm] @m.xu2.m1[gm] @m.xu3.m1[gm]
+  print @m.xu1.m1[gds] @m.xu2.m1[gds] @m.xu3.m1[gds]
+  print @m.xu1.m1[gmbs] @m.xu2.m1[gmbs] @m.xu3.m1[gmbs]
+
+  noise v(da) Vga dec 20 1 1e8
+  setplot noise1
+  write Noise_PA.raw inoise_spectrum onoise_spectrum
+  setplot noise2
+  print inoise_total onoise_total
+
+  noise v(db) Vgb dec 20 1 1e8
+  setplot noise3
+  write Noise_PB.raw inoise_spectrum onoise_spectrum
+  setplot noise4
+  print inoise_total onoise_total
+
+  noise v(dc) Vgc dec 20 1 1e8
+  setplot noise5
+  write Noise_PC.raw inoise_spectrum onoise_spectrum
+  setplot noise6
+  print inoise_total onoise_total
+  quit
+.endc
+.end
