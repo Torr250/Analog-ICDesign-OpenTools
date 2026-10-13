@@ -1,0 +1,12 @@
+Version 4
+SymbolType BLOCK
+RECTANGLE Normal 48 16 -48 -16
+WINDOW 38 0 20 Center 0
+SYMATTR SpiceModel Model
+SYMATTR Prefix X
+PIN -48 0 LEFT 8
+PINATTR PinName in
+PINATTR SpiceOrder 1
+PIN 48 0 RIGHT 8
+PINATTR PinName out
+PINATTR SpiceOrder 2

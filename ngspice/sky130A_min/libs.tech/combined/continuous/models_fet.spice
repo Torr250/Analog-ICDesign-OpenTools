@@ -1,4 +1,4 @@
-* Modelos FET continuos - versión reducida (make_min_pdk.py)
+* Continuous FET models - reduced version (make_min_pdk.py)
 .include "models_fet/sky130_fd_pr__nfet_01v8.spice"
 .include "models_fet/sky130_fd_pr__nfet_01v8_lvt.spice"
 .include "models_fet/sky130_fd_pr__nfet_g5v0d10v5.spice"

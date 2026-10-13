@@ -1,16 +1,8 @@
-***********************************************
-****gf180mcuD transistor models for ltspice****
-***********************************************
-*Minor changes to sm141064.ngspice to make it work
-*Import xnch.asy and xpch.asy symbols
-*Change the subcircuit definition to the desired transistor
-*
-* To use add the following libraries to Ltspice
-*.include design.ngspice
-*.lib "sm141064.ngspice" <corner>
-*.lib gf180mcuD_wrapper.lib
-*
-*Corner can be: typical, ss, ff, sf, fs, statistical
+****************************************************************
+****************************************************************
+*Transistor definitions with perimeter and area calculations****
+****************************************************************
+*Same implementation as Xschem
 *
 *
 *****Monte Carlo Simulations********************
@@ -48,7 +40,8 @@
 ************************************************
 *Modified by Adan Torralba
 *
-* 2026/08/11 Initial Release
+* 2026/08/11 Initial Release for LTspice
+* 2026/10/12 Realease for NGspice
 *
 ***********************************************
 *Transistor definitions with perimeter and area calculations

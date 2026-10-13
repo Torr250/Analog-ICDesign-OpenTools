@@ -1,0 +1,16 @@
+.title Test 0 - sigma of gauss() in LTspice (1000 steps)
+* a1 = gauss(1/3)       -> expected sigma 0.333 if gauss(x) is N(0,sigma=x)  (what these libs use)
+* a2 = (1/3)*gauss(3)   -> sigma 1.0 if gauss(x) is N(0,sigma=x); 0.333 if gauss(x) were N(0,1)*
+* Compute the standard deviation of v1 and v2 from the .log (v1/v2 columns of .meas).
+.param a1={gauss(1/3)} a2={(1/3)*gauss(3)}
+.step param run 1 1000 1
+V1 n1 0 {a1}
+V2 n2 0 {a2}
+R1 n1 0 1k
+R2 n2 0 1k
+V9 x9 0 0
+R9 x9 0 1k
+.dc V9 0 1 1
+.meas DC v1 FIND V(n1) AT 0
+.meas DC v2 FIND V(n2) AT 0
+.end

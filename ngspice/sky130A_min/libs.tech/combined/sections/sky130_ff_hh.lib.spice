@@ -1,4 +1,4 @@
-* Sección 'ff_hh' extraída de ../sky130.lib.spice (make_min_pdk.py --split-sections)
+* Section 'ff_hh' extracted from ../sky130.lib.spice (make_min_pdk.py --split-sections)
 .lib ff_hh
 .param MC_MM_SWITCH=0
 .param MC_PR_SWITCH=0

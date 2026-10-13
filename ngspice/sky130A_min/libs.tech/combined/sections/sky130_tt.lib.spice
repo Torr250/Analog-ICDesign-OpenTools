@@ -1,4 +1,4 @@
-* Sección 'tt' extraída de ../sky130.lib.spice (make_min_pdk.py --split-sections)
+* Section 'tt' extracted from ../sky130.lib.spice (make_min_pdk.py --split-sections)
 .lib tt
 .param MC_MM_SWITCH=0
 .param MC_PR_SWITCH=0

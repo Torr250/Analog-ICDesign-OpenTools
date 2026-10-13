@@ -1,93 +1,93 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-check_bin_edges.py - avisa si un netlist/esquematico de LTspice usa una L justo en un borde de bin
-del PDK sky130A traducido (sky130A_ltspice_min).
+check_bin_edges.py - warns if an LTspice netlist/schematic uses an L right on a bin edge
+of the translated sky130A PDK (sky130A_ltspice_min).
 
-Por que importa
----------------
-Los modelos sky130 estan "binneados" en L. Cuando L cae EXACTAMENTE en el borde de un bin
-(p. ej. 0.5u, 0.25u, 1u, 2u...), la respuesta del modelo a la variacion global de proceso
-(sw_polycd, que desplaza la L efectiva) difiere entre LTspice y ngspice, y en ngspice tambien
-muestra un cambio de pendiente. Con L = borde + 10 nm los dos simuladores coinciden a tres
-decimales (medido en los 45 bordes de los 6 FET: test4_bordes_bin).
-Efecto: solo la sigma de la variacion de proceso (Monte Carlo); el punto de operacion nominal
-y las esquinas NO se ven afectados (coinciden a ~1e-5).
+Why it matters
+--------------
+The sky130 models are binned in L. When L falls EXACTLY on a bin edge
+(e.g. 0.5u, 0.25u, 1u, 2u...), the model response to global process variation
+(sw_polycd, which shifts the effective L) differs between LTspice and ngspice, and in ngspice it also
+shows a change of slope. With L = edge + 10 nm the two simulators agree to three
+decimals (measured on the 45 edges of the 6 FETs: test4_bin_edges).
+Effect: only the sigma of the process variation (Monte Carlo); the nominal operating point
+and the corners are NOT affected (they agree to ~1e-5).
 
-Uso
----
-    python check_bin_edges.py circuito.cir otro.net esquema.asc
-    python check_bin_edges.py --tol 5e-9 circuito.cir        # tolerancia (m) alrededor del borde
-Codigo de salida: 0 sin avisos, 2 si hay L en borde (util en scripts).
+Usage
+-----
+    python check_bin_edges.py circuit.cir other.net schematic.asc
+    python check_bin_edges.py --tol 5e-9 circuit.cir        # tolerance (m) around the edge
+Exit code: 0 without warnings, 2 if there is an L on an edge (useful in scripts).
 
-Alcance: lee lineas  X... xnfet_01v8 l=0.5u w=2u  (y los esquematicos .asc: SYMBOL + SpiceLine).
-No evalua expresiones {..}/.param: las reporta como "nota". Una L que viene de .step/.param
-hay que revisarla a mano contra la tabla.
-Limite de lo medido: solo se midio L exactamente en el borde y en borde + 10 nm (no por debajo).
+Scope: reads lines  X... xnfet_01v8 l=0.5u w=2u  (and .asc schematics: SYMBOL + SpiceLine).
+It does not evaluate {..}/.param expressions: it reports them as "note". An L that comes from .step/.param
+must be checked by hand against the table.
+Limit of what was measured: only L exactly on the edge and at edge + 10 nm was measured (not below).
 """
 from __future__ import annotations
 import re
 import sys
 from pathlib import Path
 
-# bordes de L (micras) por dispositivo, medidos: (borde_um, razon LT/ng de la sensibilidad a
-# sw_polycd en el borde, severidad). Severidad: alta (>25 % o signo opuesto), media (5-25 %),
-# baja (<5 %: sin diferencia apreciable en el borde medido, pero sigue siendo un borde).
-BIN_EDGES = {'nfet_01v8': [(0.15, 1.0, 'baja'),
-               (0.18, 1.08, 'media'),
-               (0.25, 0.35, 'alta'),
-               (0.5, 0.69, 'alta'),
-               (1, 1.06, 'media'),
-               (2, 0.94, 'media'),
-               (4, 1.0, 'baja'),
-               (8, 1.01, 'baja')],
- 'nfet_01v8_lvt': [(0.15, 1.0, 'baja'),
-                   (0.18, 0.66, 'alta'),
-                   (0.25, 0.58, 'alta'),
-                   (0.5, 1.0, 'baja'),
-                   (1, 1.07, 'media'),
-                   (2, -0.58, 'alta'),
-                   (4, 0.84, 'media'),
-                   (8, 1.0, 'baja')],
- 'pfet_01v8': [(0.15, 1.0, 'baja'),
-               (0.18, 1.21, 'media'),
-               (0.25, 1.54, 'alta'),
-               (0.5, 1.36, 'alta'),
-               (1, 1.06, 'media'),
-               (2, 0.92, 'media'),
-               (4, 1.05, 'media'),
-               (8, 0.94, 'media')],
- 'pfet_01v8_lvt': [(0.35, 1.0, 'baja'),
-                   (0.5, 1.07, 'media'),
-                   (1, 1.14, 'media'),
-                   (1.5, 0.93, 'media'),
-                   (2, 0.99, 'baja'),
-                   (4, 1.0, 'baja'),
-                   (8, 0.97, 'baja')],
- 'nfet_g5v0d10v5': [(0.5, 1.0, 'baja'),
-                    (0.6, 0.91, 'media'),
-                    (0.8, 0.9, 'media'),
-                    (1, 1.03, 'baja'),
-                    (2, 1.02, 'baja'),
-                    (4, 1.01, 'baja'),
-                    (8, 0.99, 'baja')],
- 'pfet_g5v0d10v5': [(0.5, 1.0, 'baja'),
-                    (0.6, 0.98, 'baja'),
-                    (0.8, 0.84, 'media'),
-                    (1, 0.47, 'alta'),
-                    (2, 1.02, 'baja'),
-                    (4, 1.02, 'baja'),
-                    (8, 0.95, 'media')]}
+# L bin edges (microns) per device, measured: (edge_um, LT/ng ratio of the sensitivity to
+# sw_polycd at the edge, severity). Severity: high (>25 % or opposite sign), medium (5-25 %),
+# low (<5 %: no appreciable difference at the measured edge, but it is still an edge).
+BIN_EDGES = {'nfet_01v8': [(0.15, 1.0, 'low'),
+               (0.18, 1.08, 'medium'),
+               (0.25, 0.35, 'high'),
+               (0.5, 0.69, 'high'),
+               (1, 1.06, 'medium'),
+               (2, 0.94, 'medium'),
+               (4, 1.0, 'low'),
+               (8, 1.01, 'low')],
+ 'nfet_01v8_lvt': [(0.15, 1.0, 'low'),
+                   (0.18, 0.66, 'high'),
+                   (0.25, 0.58, 'high'),
+                   (0.5, 1.0, 'low'),
+                   (1, 1.07, 'medium'),
+                   (2, -0.58, 'high'),
+                   (4, 0.84, 'medium'),
+                   (8, 1.0, 'low')],
+ 'pfet_01v8': [(0.15, 1.0, 'low'),
+               (0.18, 1.21, 'medium'),
+               (0.25, 1.54, 'high'),
+               (0.5, 1.36, 'high'),
+               (1, 1.06, 'medium'),
+               (2, 0.92, 'medium'),
+               (4, 1.05, 'medium'),
+               (8, 0.94, 'medium')],
+ 'pfet_01v8_lvt': [(0.35, 1.0, 'low'),
+                   (0.5, 1.07, 'medium'),
+                   (1, 1.14, 'medium'),
+                   (1.5, 0.93, 'medium'),
+                   (2, 0.99, 'low'),
+                   (4, 1.0, 'low'),
+                   (8, 0.97, 'low')],
+ 'nfet_g5v0d10v5': [(0.5, 1.0, 'low'),
+                    (0.6, 0.91, 'medium'),
+                    (0.8, 0.9, 'medium'),
+                    (1, 1.03, 'low'),
+                    (2, 1.02, 'low'),
+                    (4, 1.01, 'low'),
+                    (8, 0.99, 'low')],
+ 'pfet_g5v0d10v5': [(0.5, 1.0, 'low'),
+                    (0.6, 0.98, 'low'),
+                    (0.8, 0.84, 'medium'),
+                    (1, 0.47, 'high'),
+                    (2, 1.02, 'low'),
+                    (4, 1.02, 'low'),
+                    (8, 0.95, 'medium')]}
 
-TOL_M = 5e-9   # se avisa si |L - borde| <= 5 nm
-SUG_M = 10e-9  # sugerencia: borde + 10 nm
+TOL_M = 5e-9   # warn if |L - edge| <= 5 nm
+SUG_M = 10e-9  # suggestion: edge + 10 nm
 
 _SUF = {"f": 1e-15, "p": 1e-12, "n": 1e-9, "u": 1e-6, "m": 1e-3, "k": 1e3, "meg": 1e6, "g": 1e9}
 _NUM = re.compile(r"^([-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?)(meg|[fpnumkg])?[a-z]*$", re.I)
 
 
 def parse_val(s: str):
-    """valor SPICE -> float en SI; None si no es un numero literal."""
+    """SPICE value -> float in SI; None if it is not a literal number."""
     m = _NUM.match(s.strip().strip("'\""))
     if not m:
         return None
@@ -165,22 +165,22 @@ def main(argv=None) -> int:
     warn = 0
     for p in map(Path, argv):
         if not p.is_file():
-            print(f"[{p}] no existe")
+            print(f"[{p}] does not exist")
             continue
         res = scan(p, tol)
         if not res:
-            print(f"[{p}] OK (ninguna L en borde de bin)")
+            print(f"[{p}] OK (no L on a bin edge)")
             continue
         print(f"[{p}]")
         for where, dev, raw, v, hit in res:
             if v is None:
-                print(f"  nota {where}: {dev} L={raw} es una expresion; revisala contra la tabla de bordes")
+                print(f"  note {where}: {dev} L={raw} is an expression; check it against the edge table")
                 continue
             e, ratio, sev = hit
             warn += 1
-            print(f"  AVISO {where}: {dev} L={raw} esta en el borde de bin {fmt_um(e * 1e-6)} "
-                  f"(severidad {sev}, LT/ng={ratio}). Usa L={fmt_um(e * 1e-6 + SUG_M)} "
-                  f"(borde + 10 nm) si vas a hacer Monte Carlo de proceso.")
+            print(f"  WARNING {where}: {dev} L={raw} is on bin edge {fmt_um(e * 1e-6)} "
+                  f"(severity {sev}, LT/ng={ratio}). Use L={fmt_um(e * 1e-6 + SUG_M)} "
+                  f"(edge + 10 nm) if you are going to run process Monte Carlo.")
     return 2 if warn else 0
 
 
