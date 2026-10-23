@@ -1,0 +1,32 @@
+{
+ "core": "core.cir",
+ "lib": "/foss/pdks/sky130A_min/libs.tech/combined/sections/sky130_tt.lib.spice",
+ "section": "tt",
+ "temp": 60,
+ "vdd": 1.8,
+ "params": {
+  "VDD": 1.8
+ },
+ "extra": [
+  ".ic v(n1)=0.2"
+ ],
+ "rails": {
+  "0": 0.0,
+  "VDD": 1.8
+ },
+ "ref": {
+  "vec": "v(n1)",
+  "level": 0.9,
+  "edge": "rise"
+ },
+ "tstop": 4e-08,
+ "tstep": "0.5p",
+ "settle": 1e-08,
+ "nper": 20,
+ "dq_fc": 1.0,
+ "n_phase": 30,
+ "nodes": "auto",
+ "skip_devices": [],
+ "blocks": [],
+ "compare_file": "spectre_pn.txt"
+}

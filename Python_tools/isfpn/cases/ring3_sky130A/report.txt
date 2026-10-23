@@ -1,0 +1,27 @@
+f0 = 828.972 MHz   minimum valid Δf (σφ<0.3 rad): 80 kHz
+
+   Δf [Hz]   thermal   flicker     total  dBc/Hz
+     1e+04    -63.40    -34.33    -34.32
+     1e+05    -83.40    -62.76    -62.72
+     3e+05    -92.94    -76.32    -76.22
+     1e+06   -103.40    -91.18    -90.92
+     3e+06   -112.94   -104.73   -104.12
+     1e+07   -123.40   -119.59   -118.08
+     3e+07   -132.94   -133.14   -130.03
+     1e+08   -143.40   -148.00   -142.10
+
+device     type  Γrms[mrad/fC]  % therm  % flick(100k)    EF
+XM1           n           9.31     13.8           32.9  0.84
+XM2           p           9.31     19.5            0.5  1.00
+XM3           n           9.31     13.8           32.9  0.84
+XM4           p           9.31     19.5            0.5  1.00
+XM5           n           9.31     13.8           32.9  0.84
+XM6           p           9.31     19.5            0.5  1.00
+
+CHECKS (no external reference)
+[OK] stable period: std(T0)=1.75e-17 s (0.0000 % of T0)
+[OK] ISF cycle closure N1: |Γ(0)-Γ(1)|/Γrms = 0.002 %
+[OK] ISF cycle closure N2: |Γ(0)-Γ(1)|/Γrms = 0.004 %
+[OK] ISF cycle closure N3: |Γ(0)-Γ(1)|/Γrms = 0.005 %
+[OK] linearity at ΔQ=1.0 fC: Γ differs 0.75 % from that at 0.2 fC (node N1)
+[OK] minimum valid offset (σφ<0.3 rad): 80 kHz

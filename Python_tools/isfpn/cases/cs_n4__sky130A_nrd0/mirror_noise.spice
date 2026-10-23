@@ -1,0 +1,17 @@
+* Mirror block: short-circuit noise current into VCS (VCS fixed at its mean value)
+Vdd vdd 0 {VDD}
+XM17 net2 VBP vdd vdd sky130_fd_pr__pfet_01v8 L=0.3 W=6 nf=1 ad=1.59 as=1.59 pd=12.53 ps=12.53 sa=0 sb=0 sd=0 mult=40 m=40
+XM18 VBP VBP vdd vdd sky130_fd_pr__pfet_01v8 L=0.3 W=6 nf=1 ad=1.59 as=1.59 pd=12.53 ps=12.53 sa=0 sb=0 sd=0 mult=40 m=40
+I0 VBP 0 500u
+Rs net2 vx 1 noisy=0
+Vfix vx 0 {VNODE} ac 1
+.temp {TEMP}
+.lib {LIB}
+.control
+ op
+ print i(Vfix) v(vbp)
+ noise v(net2,vx) Vfix dec 2 1 1e10
+ setplot noise1
+ wrdata mirror_noise.txt onoise_spectrum
+.endc
+.end
