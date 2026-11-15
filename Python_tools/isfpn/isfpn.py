@@ -16,16 +16,21 @@ WHAT IT DOES
 
 HOW TO RUN  (from the case directory; the config and netlists live there)
     python3 isfpn.py CONFIG.json all            # everything, serially (parallel ngspice hangs in the sandbox)
-    python3 isfpn.py CONFIG.json baseline|lin NODO|isf|noise|blocks|combine|compare|plots|export_template
-    The lib path can be changed without touching the config:  ISFPN_LIB=/ruta/sky130_tt.lib.spice
+    python3 isfpn.py CONFIG.json baseline|lin NODE|isf|noise|blocks|combine|compare|plots|export_template
+    The lib path can be changed without touching the config:  ISFPN_LIB=/path/sky130_tt.lib.spice   (or ISFPN_PDK=/path/gf180mcuD with 'pdk')
     All netlists are generated with the line  .lib {LIB}  and the program replaces it by '<lib> <section>' at run time
     (ngspice does not expand environment variables in .lib). 'export_template' writes templates/base.spice with {LIB} visible.
 
 CONFIG (JSON)  keys
     core        core netlist (relative to the case). Must contain the supplies and the capacitors.
     lib         the .lib file;   section  section (e.g. "tt");   temp [°C];   vdd [V]
-    params      {"VDD":1.8,"TEMP":60}  -> .param;     extra  list of SPICE lines (".ic v(n1)=0.2", ...)
-    rails       {"0":0.0,"VDD":1.8}  ideal rail nodes (Γ=0 and fixed voltage)
+    pdk         alternative to lib/section for PDKs that need several lines (e.g. gf180mcuD):
+                {"root":"/path/gf180mcuD","preamble":[".include {PDK}/design.ngspice",".lib {PDK}/sm141064.ngspice typical"],
+                 "models":"{PDK}/sm141064.ngspice"}   root can be overridden with ISFPN_PDK; "models" is the file scanned for FET names.
+                In every netlist the line  .lib {LIB}  is replaced by the PDK preamble (lib+section or the pdk lines).
+    vdd         supply [V]: sets .param VDD, the VDD rail, the bias clipping limit and {VDD} in block netlists (one place only)
+    params      extra .param, e.g. {"TEMP":60}  (VDD is added automatically from 'vdd');   extra  list of SPICE lines (".ic v(n1)=0.2", ...)
+    rails       ideal rail nodes (Γ=0 and fixed voltage); default {"0":0.0,"VDD":<vdd>}, only needed for other rails
     ref         {"vec":"v(n13)","level":0.0,"edge":"rise"}   crossing that defines the phase (x=0)
     tstop, tstep, settle   transient [s], step ("1p"), time after which steady state holds
     nper        periods between the pulse and the measurement (20);  dq_fc  pulse charge (1.0);  n_phase  (30)
@@ -38,7 +43,7 @@ CONFIG (JSON)  keys
     df_list     offsets for the table (Hz);   compare_file  reference table f[Hz] dBc/Hz
 
 OUTPUTS (in the case directory)
-    base_ref.json  T0, f0, crossings;  wave_base.txt;  lin.json;  isf_<NODO>.json;  noise_dev.json;  blocks.json
+    base_ref.json  T0, f0, crossings;  wave_base.txt;  lin.json;  isf_<NODE>.json;  noise_dev.json;  blocks.json
     summary.json   L(Δf), contribution per device, validity, checks;   report.txt   readable tables
     phase_noise.csv   L(Δf) thermal/flicker/total, Sφ=2L [rad²/Hz] and 'valid' flag (for the PLL model);
     contributions.csv, isf.csv;   figs/fig1..fig7_*.png   one figure per stage (the 'plots' command regenerates them)
@@ -82,7 +87,7 @@ def lib_models(libfile, _seen=None):
         m = re.match(r"\s*\.(subckt|model)\s+(\S+)", ln, re.I)
         if m: out.add(m.group(2).lower())
         m = re.match(r"\s*\.(include|lib)\s+[\"']?([^\s\"']+)[\"']?", ln, re.I)
-        if m and "/" in m.group(2) or (m and m.group(2).endswith((".spice", ".lib"))):
+        if m and "/" in m.group(2) or (m and m.group(2).endswith((".spice", ".lib", ".ngspice"))):
             out |= lib_models(os.path.join(base, m.group(2)), _seen)
     return out
 
@@ -90,7 +95,7 @@ def lib_models(libfile, _seen=None):
 def vmax_model(model, vdd):
     """Maximum reasonable terminal voltage used to clip a model's bias (per sky130 family)."""
     m = model.lower()
-    for key, v in (("g5v0d16", 17.0), ("g5v0", 5.5), ("05v0", 5.5), ("03v3", 3.6), ("20v0", 21.0)):
+    for key, v in (("g5v0d16", 17.0), ("g5v0", 5.5), ("06v0", 6.6), ("05v0", 5.5), ("03v3", 3.6), ("20v0", 21.0)):
         if key in m: return v
     return vdd
 
@@ -102,11 +107,16 @@ class Case:
         self.cfg = c = json.load(open(cfgpath))
         c.setdefault("section", "tt"); c.setdefault("temp", 60); c.setdefault("vdd", 1.8)
         c.setdefault("params", {}); c.setdefault("extra", []); c.setdefault("rails", {"0": 0.0, "VDD": c["vdd"]})
+        c["params"].setdefault("VDD", c["vdd"])       # .param VDD follows 'vdd' unless set explicitly
         c.setdefault("tstop", 70e-9); c.setdefault("tstep", "1p"); c.setdefault("settle", 25e-9)
         c.setdefault("nper", 20); c.setdefault("dq_fc", 1.0); c.setdefault("n_phase", 30)
         c.setdefault("nodes", "auto"); c.setdefault("skip_devices", []); c.setdefault("blocks", [])
         c.setdefault("df_list", [1e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8]); c.setdefault("reltol", 1e-5)
-        c["lib"] = os.environ.get("ISFPN_LIB", c["lib"])
+        c.setdefault("lib", None); c.setdefault("pdk", None)
+        if c["pdk"]:                                  # multi-line PDK preamble (e.g. gf180mcuD)
+            c["pdk"]["root"] = os.environ.get("ISFPN_PDK", c["pdk"].get("root", ""))
+        else:                                         # legacy: single .lib file + section (sky130)
+            c["lib"] = os.environ.get("ISFPN_LIB", c["lib"])
         self.rails = {k.upper(): v for k, v in c["rails"].items()}
         self.devs = self.parse_devices()
         if c["nodes"] == "auto":
@@ -124,7 +134,7 @@ class Case:
         """Core FETs: X... instances whose model is declared in the lib (or, if the lib cannot be read, whose
         name contains 'fet'). Returns {name: {d,g,s,b,model,kind,params}}. Warns about unsupported X instances
         (resistors, capacitors, diodes, BJTs...: their noise is NOT included)."""
-        known = {m for m in lib_models(self.cfg["lib"]) if "fet" in m}
+        known = {m for m in lib_models(self.models_file()) if "fet" in m}
         self.known_models = known
         text = re.sub(r"\n\+", " ", open(self.cfg["core"]).read())
         devs, skip = {}, [x.upper() for x in self.cfg["skip_devices"]]
@@ -158,10 +168,27 @@ class Case:
               " option remzerovec", f" wrdata {wfile} {wr}", ".endc", ".end"]
         return "\n".join(L)
 
+    def preamble(self):
+        """Lines that load the PDK. Either {"pdk": {"root", "preamble": [...{PDK}...], "models"}} or the legacy lib+section."""
+        c = self.cfg
+        if c["pdk"]:
+            return "\n".join(l.replace("{PDK}", c["pdk"]["root"]) for l in c["pdk"]["preamble"])
+        return f".lib {c['lib']} {c['section']}"
+
+    def models_file(self):
+        """File scanned to recognize the FET models (declared FET names)."""
+        c = self.cfg
+        if c["pdk"]:
+            return c["pdk"].get("models", "{PDK}/").replace("{PDK}", c["pdk"]["root"])
+        return c["lib"]
+
     def render(self, text):
-        """Replaces {LIB} by '<lib> <section>' (lib from the config or from ISFPN_LIB). ngspice does not expand environment variables
-        in .lib, so the substitution is done here."""
-        return text.replace("{LIB}", f"{self.cfg['lib']} {self.cfg['section']}")
+        """Replaces the line '.lib {LIB}' by the PDK preamble: '.lib <lib> <section>' (config 'lib'/'section' or ISFPN_LIB), or
+        the lines of config 'pdk' (root from ISFPN_PDK). ngspice does not expand environment variables in .lib/.include,
+        so the substitution is done here."""
+        text = re.sub(r"(?im)^[ \t]*\.lib[ \t]+\{LIB\}[ \t]*$", lambda m: self.preamble(), text)   # whole line -> PDK preamble
+        if not self.cfg["pdk"]: text = text.replace("{LIB}", f"{self.cfg['lib']} {self.cfg['section']}")
+        return text
 
     def export_template(self, name="base"):
         """Writes templates/<name>.spice with .lib {LIB} (template without a fixed path) to inspect or edit by hand."""

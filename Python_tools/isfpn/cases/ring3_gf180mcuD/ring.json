@@ -1,0 +1,30 @@
+{
+ "core": "core.cir",
+ "pdk": {
+  "root": "/foss/designs/atorralba/repo/Analog-ICDesign-OpenTools/ngspice/gf180mcuD",
+  "preamble": [
+   ".include {PDK}/design.ngspice",
+   ".lib {PDK}/sm141064.ngspice typical"
+  ],
+  "models": "{PDK}/sm141064.ngspice"
+ },
+ "temp": 60,
+ "vdd": 3.3,
+ "nper": 20,
+ "dq_fc": 1.0,
+ "n_phase": 30,
+ "nodes": "auto",
+ "skip_devices": [],
+ "blocks": [],
+ "extra": [
+  ".ic v(n1)=0.2"
+ ],
+ "ref": {
+  "vec": "v(n1)",
+  "level": 1.65,
+  "edge": "rise"
+ },
+ "tstop": 8e-08,
+ "tstep": "1p",
+ "settle": 2e-08
+}

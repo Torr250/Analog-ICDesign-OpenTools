@@ -1,6 +1,6 @@
 # isfpn - oscillator phase noise in ngspice (no PSS + PNOISE): the ISF method
 
-`isfpn.py` computes the phase noise L(Δf) of **any oscillator described by a sky130 transistor netlist** by combining
+`isfpn.py` computes the phase noise L(Δf) of **any oscillator described by a transistor netlist in sky130A or gf180mcuD** (other ngspice PDKs only need a PDK profile, section 3) by combining
 the **impulse sensitivity function (ISF)** of each node with the noise power spectral density of each transistor
 (and of special blocks, e.g. a current mirror). It generalizes the `ISF_pulse_test` proof-of-concept flow
 (3-inverter ring): instead of editing constants and templates in 24 scripts, a single program is driven by a JSON
@@ -14,6 +14,8 @@ configuration file and delivers **L(Δf) in a CSV** ready to use in the PLL mode
 | 3-stage ring, schematic (nrd/nrs ≠ 0) | 829.0 MHz | - | -90.92 dBc/Hz | - | (no reference) | 80 kHz |
 | 3-stage ring, `nrd=nrs=0` | 945.5 MHz | 946 MHz | -89.63 dBc/Hz | −89.58 | −0.10 dB (−0.27 .. −0.03) | 93 kHz |
 | 4-stage current-starved with mirror, `nrd=nrs=0` | 784.6 MHz | 784.8 MHz | -92.50 dBc/Hz | −92.49 | −0.03 dB (−0.11 .. +0.01) | 61 kHz |
+| gf180mcuD, 3-stage ring (3.3 V) | 628.6 MHz | - | -98.50 dBc/Hz | - | (no reference) | 37 kHz |
+| gf180mcuD, 4-stage current-starved with mirror (3.3 V) | 597.3 MHz | - | -102.73 dBc/Hz | - | (no reference) | 13 kHz |
 
 > **Important finding about `nrd/nrs`.** In the ngspice sky130 model, **omitting** `nrd/nrs` on the instance is **not** the same
 > as setting them to `0`: the subcircuit uses a non-zero default. Spectre (with the Cadence netlist, which does not
@@ -151,8 +153,15 @@ the exponent fitted between 1 and 10 Hz. The PSD at 1e10 Hz is used as is in all
 
 ## 3. Requirements, installation and structure
 - **ngspice** (tested with ngspice-42) in the `PATH`; **Python 3** with `numpy` and `matplotlib`.
-- sky130A PDK in ngspice format. The reduced version generated with `tools/make_min_pdk.py --split-sections` is recommended, using the per-section lib
+- sky130A or gf180mcuD PDK in ngspice format. The reduced version generated with `tools/make_min_pdk.py --split-sections` is recommended, using the per-section lib
   (`.../libs.tech/combined/sections/sky130_tt.lib.spice`, section `tt`): one ngspice run drops from ~3.6 s to ~0.3 s.
+- **PDKs that need several lines (gf180mcuD).** Instead of `lib`/`section`, the config has a `pdk` key:
+  ```json
+  "pdk": {"root": "/path/Analog-ICDesign-OpenTools/ngspice/gf180mcuD",
+          "preamble": [".include {PDK}/design.ngspice", ".lib {PDK}/sm141064.ngspice typical"],
+          "models": "{PDK}/sm141064.ngspice"}
+  ```
+  `root` can be overridden without touching the config with `ISFPN_PDK=/path/gf180mcuD`; `preamble` are the lines that load the PDK (`{PDK}` = root) and `models` is the file scanned to recognize the FET names. The tool replaces the line `.lib {LIB}` of every netlist (core runs, per-device noise benches and block benches) by that preamble, so the same block file works with either PDK. With sky130 nothing changes: `lib`/`section` keep working. The gf180mcuD 3.3 V devices (`nfet_03v3`, `pfet_03v3`, subcircuits with `m`, `nf`, `ad`, `as`, ... parameters) are recognized automatically; the bias clipping knows the 3.3 V, 5 V and 6 V families. Loading this PDK takes <1 s in ngspice, so no reduced PDK is needed.
 - **The lib path** is not written in the netlists: it is defined in the config (`lib`) or with the environment variable `ISFPN_LIB`, and the program
   replaces the `.lib {LIB}` marker right before running (ngspice does not expand environment variables in `.lib`). `python3 isfpn.py CFG export_template`
   writes `templates/base.spice` with the marker visible.
@@ -163,6 +172,8 @@ isfpn/
 ├── README.md                this document
 ├── tools/make_min_pdk.py    generates sky130A_min (and per-section libs)
 └── cases/
+    ├── ring3_gf180mcuD/        3-inverter ring in gf180mcuD (3.3 V), NO external reference   (ring.json)
+    ├── cs_n4_gf180mcuD/        4-stage current-starved with mirror in gf180mcuD, NO reference (cs.json, mirror_noise.spice)
     ├── ring3_sky130A/          3-inverter ring, schematic parameters, NO external reference  (ring.json)
     ├── ring3_sky130A_nrd0/     the same with explicit nrd=nrs=0, WITH the Spectre table        (ring.json, spectre_pn.txt)
     └── cs_n4__sky130A_nrd0/    4-stage pseudo-differential current-starved with mirror, WITH Spectre  (cs.json, mirror_noise.spice, spectre_pn.txt)
@@ -189,10 +200,11 @@ bias sources and, in the CS, **also the mirror and the current source** (XM17, X
 | Key | Default | Meaning |
 |---|---|---|
 | `core` | - | core netlist (relative to the case) |
-| `lib`, `section` | -, `"tt"` | `.lib` file and section. `lib` is overridden by `ISFPN_LIB` |
-| `temp`, `vdd` | 60, 1.8 | temperature [°C] and supply [V] (clipping limit for the bias of 1.8 V models) |
-| `params`, `extra` | `{}`, `[]` | `.param` (e.g. `{"VDD":1.8}`) and extra SPICE lines (`.ic ...`, `.options ...`) |
-| `rails` | `{"0":0,"VDD":vdd}` | ideal rail nodes: Γ = 0 and fixed voltage |
+| `lib`, `section` | -, `"tt"` | `.lib` file and section (sky130). `lib` is overridden by `ISFPN_LIB` |
+| `pdk` | (absent) | alternative to `lib`/`section` for PDKs with several lines (gf180mcuD): `{"root","preamble","models"}`, root overridden by `ISFPN_PDK` (section 3) |
+| `temp`, `vdd` | 60, 1.8 | temperature [°C] and supply [V]. `vdd` is the only place where the supply is set: it defines `.param VDD`, the VDD rail, the bias clipping limit and `{VDD}` in the block benches |
+| `params`, `extra` | `{}`, `[]` | extra `.param` (e.g. `{"TEMP":60}`; `VDD` is added automatically from `vdd`) and extra SPICE lines (`.ic ...`, `.options ...`) |
+| `rails` | `{"0":0,"VDD":vdd}` | ideal rail nodes: Γ = 0 and fixed voltage. Only needed if there are rails other than 0 and VDD |
 | `ref` | - | `{"vec":"v(n13)","level":0.0,"edge":"rise"}`: vector, threshold and edge that define $x=0$. Ring: `v(n1)`, 0.9; CS: `v(n13)`, 0 |
 | `tstop`, `tstep`, `settle` | 70n, `"1p"`, 25n | transient [s], step and time after which steady state holds. `settle + (nper+13)·T0` must fit in `tstop` |
 | `nper` | 20 | cycles between the pulse and the crossing measurement |
@@ -213,7 +225,7 @@ the output (`net2`, which in the real circuit goes to node VCS) is connected lik
 Rs net2 vx 1 noisy=0          * current sensor: 1 Ω with no noise of its own
 Vfix vx 0 {VNODE} ac 1        * fixes the node at its actual mean voltage; AC input of .noise
 .temp {TEMP}                  * from the config (`temp`)
-.lib {LIB}                    * the program replaces it with <lib> <section>
+.lib {LIB}                    * the program replaces it with the PDK preamble (<lib> <section>, or the `pdk` lines)
 .control
  noise v(net2,vx) Vfix dec 2 1 1e10
  setplot noise1
@@ -337,6 +349,30 @@ Perturbed nodes (auto): N1, N2, N3, N4 and VCS; the mirror enters as a block (`m
 **Lesson from the CS:** with `nrd/nrs` *omitted* (as in the Spectre netlist) ngspice gives 762.7 MHz and L(1 MHz) = −92.90 dBc/Hz (0.41 dB above Spectre); with explicit `nrd=0 nrs=0` the frequency matches (0.02 %) and the difference drops to 0.03 dB.
 The 2.8 % disagreement in f0 was not due to the PDK: it was the default value of `nrd/nrs`.
 
+### 8.4 `ring3_gf180mcuD` - 3-inverter ring in gf180mcuD (no external reference)
+`Ring_InvN3` of the repository (NMOS `nfet_03v3` W=1 µm, PMOS `pfet_03v3` W=3 µm, L=0.28 µm, `nrd/nrs = 0.18u/W` explicit), 25 fF to GND and to VDD per node, VDD=3.3 V, 60 °C, `typical` corner. Reference: N1 rising through 1.65 V. f0 = 628.64 MHz (a plain ngspice transient of the original netlist gives 628.56 MHz).
+The three nodes and the three inverter pairs give identical ISF and contributions (symmetry check). The thermal PSD is flat from 1e8 to 1e10 Hz and the flicker corner of these devices is at a few MHz, with EF ≈ 0.95 (NMOS) and 1.12 (PMOS). Minimum valid offset: 37 kHz. All automatic checks pass.
+
+| Δf | thermal | flicker | total (ISF) |
+|---|---|---|---|
+| 100 kHz | -90.23 | -69.20 | **-69.17** |
+| 1 MHz | -110.23 | -98.80 | **-98.50** |
+| 10 MHz | -130.23 | -128.37 | **-126.19** |
+| 100 MHz | -150.23 | -157.92 | **-149.54** |
+
+### 8.5 `cs_n4_gf180mcuD` - 4-stage current-starved with mirror in gf180mcuD (no external reference)
+Same topology as 8.3 with gf180mcuD 3.3 V devices (inverters W=3 µm/1 µm with m=8 and m=4, mirror XM17/XM18 W=4 µm, L=0.6 µm, m=50, I0=500 µA), VDD=3.3 V. f0 = 597.31 MHz (plain transient of the original netlist: 597.29 MHz); V(VCS) = 1.216 V. The mirror is a block (`mirror_noise.spice`, with `{VNODE}`, `{VDD}`, `{TEMP}`, `{LIB}`) and contributes 69 % of the thermal noise and 32 % of the flicker at 100 kHz; the NMOS of the first four stages (XM2/4/6/8) give ≈ 13 % each of the flicker.
+Independent check without Spectre: $\Gamma_{VCS}$ = 4.94 mrad/fC corresponds to $K_{vco}$ = 786 kHz/µA, against 801 kHz/µA measured by DC (I0 = 480 µA and 520 µA: 581.1 and 613.2 MHz), 1.8 % apart. Minimum valid offset: 13 kHz.
+
+| Δf | thermal | flicker | total (ISF) |
+|---|---|---|---|
+| 100 kHz | -84.03 | -78.56 | **-77.48** |
+| 1 MHz | -104.03 | -108.61 | **-102.73** |
+| 10 MHz | -124.03 | -138.52 | **-123.88** |
+| 100 MHz | -144.03 | -168.32 | **-144.01** |
+
+These two cases have no Spectre reference, so their validation relies on the automatic checks and on the DC sensitivity check above; the same algorithm and rules were validated against Spectre in sky130 (8.2, 8.3).
+
 ---
 
 ## 9. Limitations and common problems
@@ -363,7 +399,8 @@ each temperature/corner implies repeating the flow; ~2 min per node (the time gr
 3. If there are noisy current sources/mirrors/bias circuits: take them out with `skip_devices` and write their test bench (4.3). If the oscillator has control nodes (VCS, VBP), their ISF is almost flat and gives $K_{vco}$.
 4. `python3 ../../isfpn.py CFG baseline`, check fig1; `lin` and adjust `dq_fc`; then `all`.
 5. Review the checks and the figures; use `phase_noise.csv` in the PLL.
-6. LC oscillators or ones with noisy resistors: their sources (resistor/tank) are not included today; they can be added as noise blocks with their own test bench.
+6. Another PDK: copy a gf180mcuD case, change the `pdk` preamble/`models`, `vdd` and `ref.level` (VDD/2 for an inverter ring); check that the model names are recognized (no `WARNING: ... not recognized as a FET`) and that the thermal PSD is flat at 1e10 Hz in fig4.
+7. LC oscillators or ones with noisy resistors: their sources (resistor/tank) are not included today; they can be added as noise blocks with their own test bench.
 
 ---
 

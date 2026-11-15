@@ -1,0 +1,73 @@
+baseline: f0=597.305 MHz  T0=1.674187e-09 s  std(T0)=5.11e-17 s  n_crossings=53
+dQ=   0.2 fC  Γ_raw=   2.0373 mrad/fC
+dQ=   0.5 fC  Γ_raw=   2.0454 mrad/fC
+dQ=   1.0 fC  Γ_raw=   2.0597 mrad/fC
+dQ=   2.0 fC  Γ_raw=   2.0888 mrad/fC
+dQ=   5.0 fC  Γ_raw=   2.1795 mrad/fC
+dQ=  10.0 fC  Γ_raw=   2.3550 mrad/fC
+dQ=  20.0 fC  Γ_raw=   2.7921 mrad/fC
+dQ=  50.0 fC  Γ_raw=   5.6165 mrad/fC
+dQ= 100.0 fC  Γ_raw=  16.8734 mrad/fC
+isf N1: closure Γ(0)-Γ(1)=-0.000 mrad/fC  mean=2.399  rms=4.505 mrad/fC
+isf N2: closure Γ(0)-Γ(1)=+0.000 mrad/fC  mean=2.400  rms=4.506 mrad/fC
+isf N3: closure Γ(0)-Γ(1)=+0.000 mrad/fC  mean=2.400  rms=4.506 mrad/fC
+isf N4: closure Γ(0)-Γ(1)=+0.000 mrad/fC  mean=2.399  rms=4.505 mrad/fC
+isf VCS: closure Γ(0)-Γ(1)=+0.000 mrad/fC  mean=4.939  rms=4.943 mrad/fC
+noise XM1 (p) done
+noise XM2 (n) done
+noise XM3 (p) done
+noise XM4 (n) done
+noise XM5 (p) done
+noise XM6 (n) done
+noise XM7 (p) done
+noise XM8 (n) done
+noise XM9 (p) done
+noise XM10 (n) done
+noise XM11 (p) done
+noise XM12 (n) done
+noise XM13 (p) done
+noise XM14 (n) done
+noise XM15 (p) done
+noise XM16 (n) done
+block MIRROR: V(VCS)=1.2159 V  Sth^0.5=9.39 pA/rtHz  K(1Hz)^0.5=7588 pA/rtHz
+f0 = 597.305 MHz   minimum valid Δf (σφ<0.3 rad): 13 kHz
+
+   Δf [Hz]   thermal   flicker     total  dBc/Hz
+     1e+04    -64.03    -48.36    -48.25
+     1e+05    -84.03    -78.56    -77.48
+     3e+05    -93.57    -92.91    -90.22
+     1e+06   -104.03   -108.61   -102.73
+     3e+06   -113.57   -122.89   -113.09
+     1e+07   -124.03   -138.52   -123.88
+     3e+07   -133.57   -152.75   -133.52
+     1e+08   -144.03   -168.32   -144.01
+
+device     type  Γrms[mrad/fC]  % therm  % flick(100k)    EF
+XM1           p           4.58      0.9            1.0  1.12
+XM2           n           4.51      0.9           13.3  0.95
+XM3           p           4.58      0.9            1.0  1.12
+XM4           n           4.51      0.9           13.4  0.95
+XM5           p           4.58      0.9            1.0  1.12
+XM6           n           4.51      0.9           13.4  0.95
+XM7           p           4.58      0.9            1.0  1.12
+XM8           n           4.51      0.9           13.3  0.95
+XM9           p           4.58      2.7            0.1  1.12
+XM10          n           4.51      3.1            2.6  0.95
+XM11          p           4.58      2.7            0.1  1.12
+XM12          n           4.51      3.1            2.6  0.95
+XM13          p           4.58      2.7            0.1  1.12
+XM14          n           4.51      3.1            2.6  0.95
+XM15          p           4.58      2.7            0.1  1.12
+XM16          n           4.51      3.1            2.6  0.95
+MIRROR      blk           4.94     69.0           32.1  1.12
+
+CHECKS (no external reference)
+[OK] stable period: std(T0)=5.11e-17 s (0.0000 % of T0)
+[OK] ISF cycle closure N1: |Γ(0)-Γ(1)|/Γrms = 0.002 %
+[OK] ISF cycle closure N2: |Γ(0)-Γ(1)|/Γrms = 0.001 %
+[OK] ISF cycle closure N3: |Γ(0)-Γ(1)|/Γrms = 0.000 %
+[OK] ISF cycle closure N4: |Γ(0)-Γ(1)|/Γrms = 0.001 %
+[OK] ISF cycle closure VCS: |Γ(0)-Γ(1)|/Γrms = 0.003 %
+[OK] linearity at ΔQ=1.0 fC: Γ differs 1.10 % from that at 0.2 fC (node N1)
+[OK] minimum valid offset (σφ<0.3 rad): 13 kHz
+CSV: phase_noise.csv, contributions.csv, isf.csv
