@@ -1,0 +1,40 @@
+f0 = 784.617 MHz   minimum valid Δf (σφ<0.3 rad): 61 kHz
+
+   Δf [Hz]   thermal   flicker     total  dBc/Hz
+     1e+04    -59.06    -36.51    -36.49
+     1e+05    -79.06    -65.07    -64.90
+     3e+05    -88.60    -78.68    -78.26
+     1e+06    -99.06    -93.58    -92.50
+     3e+06   -108.60   -107.17   -104.82
+     1e+07   -119.06   -122.06   -117.30
+     3e+07   -128.60   -135.64   -127.82
+     1e+08   -139.06   -150.52   -138.76
+
+device     type  Γrms[mrad/fC]  % therm  % flick(100k)    EF
+XM1           n           7.95      1.6           18.0  0.84
+XM2           p           8.13      2.9            0.3  1.00
+XM3           n           7.95      1.6           17.9  0.84
+XM4           p           8.13      2.9            0.3  1.00
+XM5           n           7.95      1.6           18.0  0.84
+XM6           p           8.13      2.9            0.3  1.00
+XM7           n           7.95      1.6           17.9  0.84
+XM8           p           8.13      2.9            0.3  1.00
+XM9           n           7.95      3.7            5.0  0.84
+XM10          p           8.13      3.5            0.0  1.00
+XM11          n           7.95      3.7            5.0  0.84
+XM12          p           8.13      3.5            0.0  1.00
+XM13          n           7.95      3.7            5.0  0.84
+XM14          p           8.13      3.5            0.0  1.00
+XM15          n           7.95      3.7            5.0  0.84
+XM16          p           8.13      3.5            0.0  1.00
+MIRROR      blk           5.72     53.2            6.9  1.00
+
+CHECKS (no external reference)
+[OK] stable period: std(T0)=1.98e-16 s (0.0000 % of T0)
+[OK] ISF cycle closure N1: |Γ(0)-Γ(1)|/Γrms = 0.009 %
+[OK] ISF cycle closure N2: |Γ(0)-Γ(1)|/Γrms = 0.018 %
+[OK] ISF cycle closure N3: |Γ(0)-Γ(1)|/Γrms = 0.015 %
+[OK] ISF cycle closure N4: |Γ(0)-Γ(1)|/Γrms = 0.009 %
+[OK] ISF cycle closure VCS: |Γ(0)-Γ(1)|/Γrms = 0.023 %
+[OK] linearity at ΔQ=1.0 fC: Γ differs 0.56 % from that at 0.2 fC (node N1)
+[OK] minimum valid offset (σφ<0.3 rad): 61 kHz

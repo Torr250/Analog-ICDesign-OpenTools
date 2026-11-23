@@ -1,0 +1,9 @@
+{
+  "_nota": "Barrido de ibias en la malla PVT completa (45 esquinas x valores de control). Puede tardar: usa --jobs segun tus nucleos fisicos",
+  "extends": "cs_diff_base.json",
+  "command": "sweep",
+  "corners": ["pvt45"],
+  "target_f": "600meg",
+  "jobs": 5,
+  "outdir": "results/cs_diff_pvt45"
+}

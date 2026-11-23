@@ -1,4 +1,4 @@
-* Netlist 1: simula el subcircuito vco_ideal (sin ruido)
+* Netlist 1: simulates the vco_ideal subcircuit (noiseless)
 .include vco_ideal_lib.spice
 Vctrl vctrl 0 1.65
 Xvco vctrl out vco_ideal vdd=3.3 f0=500meg kvco=80meg vc0=1.65

@@ -1,5 +1,5 @@
 {
-  "_nota": "Barrido de ibias en ss/125C/3.0V, typical/60C/3.3V y ff/-40C/3.6V; 600 MHz objetivo",
+  "_note": "ibias sweep at ss/125C/3.0V, typical/60C/3.3V and ff/-40C/3.6V; 600 MHz target",
   "extends": "cs_diff_base.json",
   "command": "sweep",
   "corners": ["worst3"],

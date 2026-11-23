@@ -1,5 +1,5 @@
 {
-  "_nota": "Barrido de ibias con las condiciones del netlist (typical, 60 C, VDD del netlist)",
+  "_note": "ibias sweep with the netlist conditions (typical, 60 C, netlist VDD)",
   "extends": "cs_diff_base.json",
   "command": "sweep",
   "vdd": 3.3,

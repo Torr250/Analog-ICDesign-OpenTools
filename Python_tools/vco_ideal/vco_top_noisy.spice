@@ -1,4 +1,4 @@
-* Netlist 2: simula el subcircuito vco_ideal_noisy (ruido de fase, L1m a 1 MHz)
+* Netlist 2: simulates the vco_ideal_noisy subcircuit (phase noise, L1m at 1 MHz)
 .include vco_ideal_lib.spice
 Vctrl vctrl 0 1.65
 Xvco vctrl out vco_ideal_noisy vdd=3.3 f0=500meg kvco=80meg vc0=1.65 L1m=-100 dt=10p

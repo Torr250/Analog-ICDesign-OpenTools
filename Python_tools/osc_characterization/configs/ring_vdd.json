@@ -1,5 +1,5 @@
 {
-  "_nota": "Ring de 3 inversores (single-ended, sin control): se barre VDD reescribiendo la linea .param",
+  "_note": "3-inverter ring (single-ended, no control): VDD is swept by rewriting the .param line",
   "command": "sweep",
   "netlist": "../Ring_InvN3.spice",
   "line_prefix": ".param",

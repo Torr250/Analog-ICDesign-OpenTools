@@ -1,58 +1,59 @@
 # osc_characterization.py
 
-Caracterización de **osciladores** (típicamente diferenciales, también de una sola salida) a partir de simulaciones transitorias de **ngspice**. Está basado en `clock_jitter.py` (cruces direccionales, TIE por ajuste lineal, jitter de periodo y ciclo a ciclo, plegado del ojo), pero con una diferencia de fondo: la frecuencia de un oscilador **no es un dato de entrada**, se **mide** de la propia señal.
+Characterization of **oscillators** (typically differential, also single-ended) from **ngspice** transient simulations. It is based on `clock_jitter.py` (directional crossings, TIE from a linear fit, period and cycle-to-cycle jitter, eye folding), with one fundamental difference: the frequency of an oscillator is **not an input**, it is **measured** from the signal itself.
 
-Cubre una simulación individual, curvas de sintonía (barrido de un parámetro de control) y esas mismas curvas en varias esquinas PVT. Los resultados se verificaron contra los `.meas` propios de ngspice (597.29 MHz para `CS_Pseudo_diff_N4.spice` y 628.56 MHz para `Ring_InvN3.spice` en condiciones nominales).
+It covers a single simulation, tuning curves (sweep of a control parameter) and those same curves over several PVT corners. The results were checked against ngspice's own `.meas` (597.29 MHz for `CS_Pseudo_diff_N4.spice` and 628.56 MHz for `Ring_InvN3.spice` at nominal conditions).
 
 ---
 
-## 1. Contenido de la carpeta
+## 1. Folder contents
 
 ```
 osc_characterization/
-├── osc_characterization.py        el script
-├── README.md                      este documento
-├── CS_Pseudo_diff_N4.spice        oscilador diferencial de 4 etapas con carga de corriente (ejemplo)
-├── Ring_InvN3.spice               ring de 3 inversores, una salida, sin control (ejemplo)
-├── CS_Pseudo_diff_N4.raw          simulaciones ya hechas, para probar `analyze`
+├── osc_characterization.py        the script
+├── README.md                      this document
+├── CS_Pseudo_diff_N4.spice        4-stage differential oscillator with current load (example)
+├── Ring_InvN3.spice               3-inverter ring, single output, no control (example)
+├── CS_Pseudo_diff_N4.raw          already-run simulations, to try `analyze`
 ├── Ring_InvN3.raw
 └── configs/
-    ├── cs_diff_base.json          ajustes comunes del diferencial (los demás heredan de él)
-    ├── cs_diff_nominal.json       barrido de ibias, condiciones del netlist
-    ├── cs_diff_worst3.json        barrido de ibias en 3 esquinas PVT
-    ├── cs_diff_pvt45.json         barrido de ibias en la malla PVT completa (45 esquinas)
-    ├── cs_diff_analyze.json       analiza un .raw del diferencial
-    ├── ring_vdd.json              barrido de VDD del ring
-    └── ring_analyze.json          analiza un .raw del ring
+    ├── cs_diff_base.json          common settings of the differential oscillator (the others inherit from it)
+    ├── cs_diff_nominal.json       ibias sweep, netlist conditions
+    ├── cs_diff_worst3.json        ibias sweep over 3 PVT corners
+    ├── cs_diff_pvt45.json         ibias sweep over the full PVT grid (45 corners)
+    ├── cs_diff_mc.json            Monte Carlo (split) at one operating point
+    ├── cs_diff_analyze.json       analyzes a .raw of the differential oscillator
+    ├── ring_vdd.json              VDD sweep of the ring
+    └── ring_analyze.json          analyzes a .raw of the ring
 ```
 
-## 2. Requisitos
+## 2. Requirements
 
-- Python 3 y `ngspice` en el `PATH` (o indícalo con `--ngspice /ruta/ngspice`).
-- Librerías de Python:
+- Python 3 and `ngspice` in the `PATH` (or give its location with `--ngspice /path/to/ngspice`).
+- Python libraries:
 
 ```bash
 pip install spicelib numpy scipy matplotlib --break-system-packages
 ```
 
-El script solo lee archivos `.raw` en formato ngspice (vía `spicelib`); no depende de ningún PDK en particular.
+The script only reads `.raw` files in ngspice format (through `spicelib`); it does not depend on any particular PDK.
 
-## 3. Inicio rápido
+## 3. Quick start
 
 ```bash
 cd osc_characterization
 
-# a) Analizar una simulación que ya tienes (.raw)
+# a) Analyze a simulation you already have (.raw)
 python3 osc_characterization.py --config configs/cs_diff_analyze.json
 
-# b) Barrer la corriente de polarización del diferencial
+# b) Sweep the bias current of the differential oscillator
 python3 osc_characterization.py --config configs/cs_diff_nominal.json
 
-# c) Lo mismo en las tres esquinas PVT (ss/125 °C/3.0 V, typical/60 °C/3.3 V, ff/-40 °C/3.6 V)
+# c) The same in the three PVT corners (ss/125 °C/3.0 V, typical/60 °C/3.3 V, ff/-40 °C/3.6 V)
 python3 osc_characterization.py --config configs/cs_diff_worst3.json
 ```
 
-Sin JSON, el equivalente de (a) es:
+Without a JSON file, the equivalent of (a) is:
 
 ```bash
 python3 osc_characterization.py analyze CS_Pseudo_diff_N4.raw \
@@ -60,91 +61,91 @@ python3 osc_characterization.py analyze CS_Pseudo_diff_N4.raw \
   --phase-ref "v(n13)" --phase-sig "v(n24)" --phase-expected -90
 ```
 
-## 4. Subcomandos y casos que soporta
+## 4. Subcommands and supported cases
 
-| Subcomando | Qué hace | Necesita |
+| Subcommand | What it does | Needs |
 |---|---|---|
-| `analyze` | Caracteriza **un** `.raw` (todas las métricas de la sección 5) | el `.raw` |
-| `sweep` | Corre ngspice variando **una línea** del netlist, analiza cada punto y arma la curva de sintonía; opcionalmente repite el barrido en varias esquinas PVT | el netlist `.spice` |
-| `mc` | Monte Carlo (variación global y/o mismatch del PDK gf180mcuD). **Un** valor de control = MC en un punto; **varios** = curvas de sintonía por pieza | el netlist `.spice` |
-| `tuning` | Arma la curva de sintonía a partir de `.raw` que ya tienes (sin correr ngspice) | un `.raw` por punto |
+| `analyze` | Characterizes **one** `.raw` (all the metrics of section 5) | the `.raw` |
+| `sweep` | Runs ngspice varying **one line** of the netlist, analyzes each point and builds the tuning curve; optionally repeats the sweep over several PVT corners | the `.spice` netlist |
+| `mc` | Monte Carlo (global variation and/or mismatch of the gf180mcuD PDK). **One** control value = MC at one point; **several** = per-sample tuning curves | the `.spice` netlist |
+| `tuning` | Builds the tuning curve from `.raw` files you already have (does not run ngspice) | one `.raw` per point |
 
-Si omites el subcomando y das un `.raw`, se asume `analyze` (`python3 osc_characterization.py archivo.raw --pos ...`).
+If you omit the subcommand and give a `.raw`, `analyze` is assumed (`python3 osc_characterization.py file.raw --pos ...`).
 
-**Tipos de oscilador y de señal**
+**Oscillator and signal types**
 
-| Caso | Cómo se indica |
+| Case | How to indicate it |
 |---|---|
-| Diferencial, con los dos nodos | `--pos "v(n1)" --neg "v(n3)"` (el script calcula pos − neg y además el modo común) |
-| Diferencial ya construido en el netlist (fuente `E`) | `--signal "v(n13)"` |
-| **Una sola salida** (ring, relajación, etc.) | `--signal "v(n1)" --single-ended` |
-| Con parámetro de control (corriente, tensión de control...) | `sweep` con `--line-prefix`, `--template` y `--values` |
-| **Sin** parámetro de control, de funcionamiento libre | `analyze`, o `sweep` sobre `VDD`/`TEMP` (ver ejemplo del ring) |
-| Varias salidas con relación de fase (I/Q, multifase) | `--phase-ref` y `--phase-sig` |
-| Ruido transitorio incluido en la simulación | `--noisy` (quita la nota de "jitter solo numérico") |
+| Differential, with both nodes | `--pos "v(n1)" --neg "v(n3)"` (the script computes pos − neg and also the common mode) |
+| Differential already built in the netlist (`E` source) | `--signal "v(n13)"` |
+| **Single output** (ring, relaxation, etc.) | `--signal "v(n1)" --single-ended` |
+| With a control parameter (current, control voltage...) | `sweep` with `--line-prefix`, `--template` and `--values` |
+| **No** control parameter, free-running | `analyze`, or `sweep` over `VDD`/`TEMP` (see the ring example) |
+| Several outputs with a phase relationship (I/Q, multiphase) | `--phase-ref` and `--phase-sig` |
+| Transient noise included in the simulation | `--noisy` (removes the "numerical-only jitter" note) |
 
-## 5. Análisis que realiza
+## 5. Analyses performed
 
-Todas las métricas se calculan **en estado estable** (sección 5.2). En el informe (`osc_summary.txt`) aparecen en este orden.
+All metrics are computed **in steady state** (section 5.2). In the report (`osc_summary.txt`) they appear in this order.
 
-### 5.1 Verificación de que la simulación es adecuada
-Antes de medir, el script revisa que el `.tran` sea suficiente y emite avisos:
+### 5.1 Check that the simulation is adequate
+Before measuring, the script checks that the `.tran` is sufficient and issues warnings:
 
-- **Puntos por periodo** en el peor caso (umbral `--min-ppp`, 20). Si el paso es muy grueso, la frecuencia, el jitter y los armónicos se degradan.
-- **Ciclos de estado estable** (umbral `--min-cycles`, 10). Con pocos ciclos la estadística no es confiable.
-- **Estado estable alcanzado**: avisa si no se detectó claramente.
-- **Señal que parece de una sola salida** (offset de DC grande respecto a la excursión): sugiere `--single-ended`.
+- **Points per period** in the worst case (threshold `--min-ppp`, 20). If the step is too coarse, the frequency, jitter and harmonics degrade.
+- **Steady-state cycles** (threshold `--min-cycles`, 10). With few cycles the statistics are not reliable.
+- **Steady state reached**: warns if it was not clearly detected.
+- **Signal that looks single-ended** (large DC offset relative to the swing): suggests `--single-ended`.
 
-Cuando algo no cumple, **sugiere un `.tran` listo para pegar**: paso ≈ T/200 redondeado a 1-2-5 y tiempo final = inicio del estado estable + `--target-cycles` (50) periodos. Los avisos aparecen al inicio del informe, en `osc_metrics.json` (`warnings`; la clave `suggested_tran` existe solo cuando hay algo que corregir) y, en los barridos, como una columna de conteo de avisos.
+When something does not comply, it **suggests a ready-to-paste `.tran`**: step ≈ T/200 rounded to 1-2-5 and stop time = start of steady state + `--target-cycles` (50) periods. The warnings appear at the top of the report, in `osc_metrics.json` (`warnings`; the `suggested_tran` key exists only when there is something to fix) and, in sweeps, as a warning-count column.
 
-### 5.2 Detección del estado estable
-Se mide la amplitud y el periodo de **cada ciclo**; el valor final es la mediana del último cuarto de la simulación. El estado estable empieza en el primer ciclo a partir del cual la amplitud se mantiene dentro de ±2 % (`--amp-tol`) y el periodo dentro de ±0.5 % (`--freq-tol`) de ese valor final, más 2 ciclos de margen. Si no se establece con al menos 6 ciclos de margen, se usa la segunda mitad de la simulación y se avisa. Puedes forzar el inicio con `--t-start`.
+### 5.2 Steady-state detection
+The amplitude and period of **each cycle** are measured; the final value is the median of the last quarter of the simulation. Steady state starts at the first cycle from which the amplitude stays within ±2 % (`--amp-tol`) and the period within ±0.5 % (`--freq-tol`) of that final value, plus 2 cycles of margin. If it does not settle with at least 6 cycles of margin, the second half of the simulation is used and a warning is issued. You can force the start with `--t-start`.
 
-### 5.3 Frecuencia y periodo
-Ajuste lineal de los cruces ascendentes por el umbral (por defecto, el nivel medio de la señal; se cambia con `--threshold`). Reporta frecuencia, periodo y su dispersión. `--freq` es opcional y solo sirve para mostrar la desviación respecto a un valor esperado.
+### 5.3 Frequency and period
+Linear fit of the rising crossings of the threshold (by default, the mid level of the signal; change it with `--threshold`). It reports frequency, period and their spread. `--freq` is optional and only serves to show the deviation from an expected value.
 
-### 5.4 Amplitud y modo común
-Amplitud diferencial (pico, pico a pico, rms), extremos, offset y asimetría entre picos; para cada nodo, su rango y valor medio; modo común (valor medio y rizado, que normalmente aparece a 2·f0). `--probe` agrega nodos extra (media y rizado), por ejemplo la tensión del tail.
+### 5.4 Amplitude and common mode
+Differential amplitude (peak, peak-to-peak, rms), extremes, offset and asymmetry between peaks; for each node, its range and mean value; common mode (mean value and ripple, which normally appears at 2·f0). `--probe` adds extra nodes (mean and ripple), for example the tail voltage.
 
-### 5.5 Arranque (start-up)
-Tiempos al 10 % y 90 % de la amplitud final, tasa de crecimiento exponencial y tiempos de asentamiento de amplitud y de frecuencia. Si el primer ciclo ya está cerca de la amplitud final (por un `.ic` muy agresivo), el script lo indica y los tiempos se reportan como "ya alcanzado". Con `.ic`/`uic` el arranque parte de un desbalance impuesto, no de ruido, así que sirve para **comparar** diseños o esquinas, no como valor absoluto.
+### 5.5 Start-up
+Times at 10 % and 90 % of the final amplitude, exponential growth rate and amplitude and frequency settling times. If the first cycle is already close to the final amplitude (because of a very aggressive `.ic`), the script says so and the times are reported as "already reached". With `.ic`/`uic` the start-up begins from an imposed imbalance, not from noise, so it is useful to **compare** designs or corners, not as an absolute value.
 
-### 5.6 Potencia y energía
-Corriente media sobre periodos enteros → potencia y energía por ciclo. `--isupply` es la corriente **total** de la fuente de alimentación; `--icore` la corriente del **núcleo** (sin ramas de referencia o polarización), y se reportan por separado. La tensión se toma de `--vdd` o, si varía, de una traza (`--vsupply "v(vdd)"`).
+### 5.6 Power and energy
+Mean current over whole periods → power and energy per cycle. `--isupply` is the **total** current of the supply; `--icore` is the **core** current (without reference or bias branches), and they are reported separately. The voltage is taken from `--vdd` or, if it varies, from a trace (`--vsupply "v(vdd)"`).
 
 ### 5.7 Jitter
-TIE (error de intervalo de tiempo) respecto a la rejilla ideal ajustada por mínimos cuadrados, jitter de periodo y jitter ciclo a ciclo, para flancos ascendentes y descendentes. **Sin ruido transitorio**, este jitter es solo numérico (error de integración del simulador) y sirve como piso de referencia; el ruido de fase real se estima aparte (por ejemplo con `isfpn.py`).
+TIE (time interval error) relative to the ideal grid fitted by least squares, period jitter and cycle-to-cycle jitter, for rising and falling edges. **Without transient noise**, this jitter is only numerical (the simulator's integration error) and serves as a reference floor; the real phase noise is estimated separately (for example with `isfpn.py`).
 
-### 5.8 Diagrama de ojo
-Las formas de onda se pliegan sobre la rejilla ideal (ventana de `--ui-window` periodos, `--oversample` puntos por periodo) para obtener el ojo, ciclo de trabajo, pendiente (slew) y tiempos de subida/bajada 10–90 %.
+### 5.8 Eye diagram
+The waveforms are folded onto the ideal grid (window of `--ui-window` periods, `--oversample` points per period) to obtain the eye, duty cycle, slew rate and 10–90 % rise/fall times.
 
-### 5.9 Espectro (FFT coherente)
-Se toma un número **entero** de periodos y se remuestrea con spline cúbica a `--ppp` puntos por periodo, de modo que los armónicos caen exactamente en un bin y no hay fuga espectral (`--window rect`; `hann` es opcional). Reporta la fundamental, `--nharm` armónicos en dBc y la **THD**. Si hay pocos puntos por periodo, avisa a partir de qué armónico no es fiable.
+### 5.9 Spectrum (coherent FFT)
+An **integer** number of periods is taken and resampled with a cubic spline to `--ppp` points per period, so the harmonics fall exactly on a bin and there is no spectral leakage (`--window rect`; `hann` is optional). It reports the fundamental, `--nharm` harmonics in dBc and the **THD**. If there are few points per period, it warns from which harmonic onward the result is not reliable.
 
-### 5.10 Fase entre salidas
-Fase de cada señal de `--phase-sig` respecto a `--phase-ref`, medida por la fundamental de la FFT y por cruces por cero (ambas deben coincidir). **Convención: positivo = la señal ATRASA respecto a la referencia**; por ejemplo, en el oscilador diferencial `v(n24)` adelanta 90° a `v(n13)`, así que la fase esperada es −90. Con `--phase-expected` (uno por señal, en el mismo orden) reporta el error. También acepta expresiones como `v(n1)-v(n3)`.
+### 5.10 Phase between outputs
+Phase of each `--phase-sig` signal with respect to `--phase-ref`, measured from the FFT fundamental and from zero crossings (both must agree). **Convention: positive = the signal LAGS the reference**; for example, in the differential oscillator `v(n24)` leads `v(n13)` by 90°, so the expected phase is −90. With `--phase-expected` (one per signal, in the same order) it reports the error. It also accepts expressions such as `v(n1)-v(n3)`.
 
-### 5.11 Curva de sintonía (`sweep` / `tuning`)
-Para cada punto de control se obtiene frecuencia, amplitud diferencial, modo común, corriente, potencia, energía por ciclo, THD, tiempo al 90 %, fase y número de avisos. **Kvco = df/dctrl** se calcula por gradiente numérico, en Hz por unidad del eje (si usas `--ctrl-scale 1e-6`, es Hz por µA). Con solo 2 puntos válidos es la pendiente entre ellos; con 1 punto no se puede calcular (`nan` en el CSV y una nota en la gráfica en lugar de un panel vacío).
+### 5.11 Tuning curve (`sweep` / `tuning`)
+For each control point it obtains frequency, differential amplitude, common mode, current, power, energy per cycle, THD, time to 90 %, phase and number of warnings. **Kvco = df/dctrl** is computed by numerical gradient, in Hz per axis unit (if you use `--ctrl-scale 1e-6`, it is Hz per µA). With only 2 valid points it is the slope between them; with 1 point it cannot be computed (`nan` in the CSV and a note in the plot instead of an empty panel).
 
-### 5.12 Esquinas PVT
-Con `--corner` / `--corners`, todo el barrido se repite en cada esquina y se genera una comparativa: curvas superpuestas, rango de frecuencia por esquina, **rango alcanzable en todas las esquinas a la vez** y (con `--target-f`) el valor de control que se necesita en cada esquina para una frecuencia dada, por interpolación lineal.
+### 5.12 PVT corners
+With `--corner` / `--corners`, the whole sweep is repeated in each corner and a comparison is generated: overlaid curves, frequency range per corner, **range reachable in all corners at once** and (with `--target-f`) the control value needed in each corner for a given frequency, by linear interpolation.
 
-## 6. Requisitos del netlist
+## 6. Netlist requirements
 
-El script **no necesita un netlist especial**, pero espera lo siguiente (tu netlist de ejemplo ya lo cumple):
+The script **does not need a special netlist**, but it expects the following (your example netlist already complies):
 
-- Un bloque `.control` con `tran ... ` y `write archivo.raw`, y `save all` (o al menos las señales que analizas). En `sweep` el script cambia el nombre del `.raw` automáticamente.
-- Para esquinas PVT:
-  - una línea `.lib <archivo> <sección>` con la sección `typical`, `ff`, `ss`, `fs` o `sf`;
-  - `VDD=` y `TEMP=` dentro de una línea `.param` (por ejemplo `.param VDD=3.3 TEMP=60`), y que el resto del netlist use `{VDD}` y `{TEMP}` (por ejemplo `.temp {TEMP}`). Si no hay `TEMP=`, se acepta un `.temp 60` con número literal.
-- Para variar un parámetro: un elemento en **una sola línea** (por ejemplo `I0 VBP 0 500u`).
+- A `.control` block with `tran ... ` and `write file.raw`, and `save all` (or at least the signals you analyze). In `sweep` the script changes the name of the `.raw` automatically.
+- For PVT corners:
+  - a `.lib <file> <section>` line with the section `typical`, `ff`, `ss`, `fs` or `sf`;
+  - `VDD=` and `TEMP=` inside a `.param` line (for example `.param VDD=3.3 TEMP=60`), and the rest of the netlist using `{VDD}` and `{TEMP}` (for example `.temp {TEMP}`). If there is no `TEMP=`, a `.temp 60` with a literal number is accepted.
+- To vary a parameter: an element on **a single line** (for example `I0 VBP 0 500u`).
 
-Las rutas del PDK se pueden cambiar sin tocar el netlist con `--path-sub /ruta/vieja=/ruta/nueva` (repetible).
+The PDK paths can be changed without touching the netlist with `--path-sub /old/path=/new/path` (repeatable).
 
-## 7. Barridos
+## 7. Sweeps
 
-### 7.1 Barrido de un parámetro de control
+### 7.1 Sweep of a control parameter
 ```bash
 python3 osc_characterization.py sweep \
   --netlist CS_Pseudo_diff_N4.spice \
@@ -155,13 +156,13 @@ python3 osc_characterization.py sweep \
   --outdir osc_sweep
 ```
 
-- `--line-prefix`: nombre del elemento (o directiva) cuya línea se reemplaza; se sustituye la **primera** línea que empieza con ese nombre.
-- `--template`: la línea nueva; `{v}` se sustituye por cada valor.
-- `--values`: acepta sufijos de SPICE (`300u`, `1.2`, `2meg`).
-- `--ctrl-scale`: divide el valor para mostrarlo (1e-6 → µA); afecta etiquetas, tablas, CSV y Kvco.
+- `--line-prefix`: name of the element (or directive) whose line is replaced; the **first** line that starts with that name is substituted.
+- `--template`: the new line; `{v}` is replaced by each value.
+- `--values`: accepts SPICE suffixes (`300u`, `1.2`, `2meg`).
+- `--ctrl-scale`: divides the value for display (1e-6 → µA); it affects labels, tables, CSV and Kvco.
 
-### 7.2 Barrido de VDD o TEMP (sin parámetro de control)
-Se reescribe la línea `.param`; la plantilla debe repetir los demás parámetros de esa línea:
+### 7.2 VDD or TEMP sweep (no control parameter)
+The `.param` line is rewritten; the template must repeat the other parameters of that line:
 
 ```bash
 python3 osc_characterization.py sweep \
@@ -171,9 +172,9 @@ python3 osc_characterization.py sweep \
   --signal "v(n1)" --single-ended --vsupply "v(vdd)" --isupply "i(v7)" \
   --outdir ring_vdd
 ```
-(Como VDD cambia, la potencia usa `--vsupply` en lugar de `--vdd`.)
+(Since VDD changes, the power uses `--vsupply` instead of `--vdd`.)
 
-### 7.3 Barrido de control en esquinas PVT
+### 7.3 Control sweep over PVT corners
 ```bash
 python3 osc_characterization.py sweep \
   --netlist CS_Pseudo_diff_N4.spice \
@@ -184,24 +185,24 @@ python3 osc_characterization.py sweep \
   --outdir sweep_pvt
 ```
 
-- **Presets** (`--corners`, repetible; se pueden combinar entre sí y con `--corner`):
+- **Presets** (`--corners`, repeatable; they can be combined with each other and with `--corner`):
 
-| Preset | Esquinas |
+| Preset | Corners |
 |---|---|
 | `worst3` | `ss:125:3.0`, `typical:60:3.3`, `ff:-40:3.6` |
-| `process5` | las 5 esquinas de proceso (typical, ff, ss, fs, sf) a 60 °C y 3.3 V |
-| `pvt45` | malla completa: 5 procesos × {-40, 27, 125 °C} × {3.0, 3.3, 3.6 V} (las mismas de `pvt_runner.py`) |
-| `pvt27` | lo mismo con 3 procesos (typical, ff, ss) |
-| `temp3` | solo temperatura: typical, 3.3 V, -40/27/125 °C |
-| `vdd3` | solo alimentación: typical, 27 °C, 3.0/3.3/3.6 V |
+| `process5` | the 5 process corners (typical, ff, ss, fs, sf) at 60 °C and 3.3 V |
+| `pvt45` | full grid: 5 processes × {-40, 27, 125 °C} × {3.0, 3.3, 3.6 V} (the same as in `pvt_runner.py`) |
+| `pvt27` | the same with 3 processes (typical, ff, ss) |
+| `temp3` | temperature only: typical, 3.3 V, -40/27/125 °C |
+| `vdd3` | supply only: typical, 27 °C, 3.0/3.3/3.6 V |
 
-  Se agregan más presets editando el diccionario `PRESETS` del script (una lista de textos `"proceso:temp:vdd"`). Ojo con el costo: el número de simulaciones es esquinas × valores de control (`pvt45` con 5 valores = 225 corridas), así que conviene usar `--jobs`. Con más de 6 esquinas, la figura comparativa usa color = proceso, estilo de línea = VDD y opacidad = temperatura (más claro = más frío), igual que `pvt_runner.py compare-all`.
-- **Esquinas sueltas** (`--corner NOMBRE:TEMP:VDD`, repetible): `--corner ss:125:3.0 --corner typical:27:3.3`. `NOMBRE` puede ser `typical` (o `tt`), `ff`, `ss`, `fs`, `sf`.
-- Los valores de control son los mismos en todas las esquinas.
-- En pantalla se muestra **una línea por esquina** (rango de frecuencia, número de avisos y puntos fallidos) y al final la comparación; el detalle de cada esquina queda en `<esquina>/analysis.log`. Con `--verbose` (`"verbose": true` en el JSON) se imprime todo en pantalla como antes.
-- No uses `--vdd` en este modo: la potencia se calcula con el VDD de cada esquina.
+  More presets are added by editing the `PRESETS` dictionary of the script (a list of `"process:temp:vdd"` strings). Mind the cost: the number of simulations is corners × control values (`pvt45` with 5 values = 225 runs), so it is advisable to use `--jobs`. With more than 6 corners, the comparison figure uses color = process, line style = VDD and opacity = temperature (lighter = colder), the same as `pvt_runner.py compare-all`.
+- **Individual corners** (`--corner NAME:TEMP:VDD`, repeatable): `--corner ss:125:3.0 --corner typical:27:3.3`. `NAME` can be `typical` (or `tt`), `ff`, `ss`, `fs`, `sf`.
+- The control values are the same in all corners.
+- On screen, **one line per corner** is shown (frequency range, number of warnings and failed points) and, at the end, the comparison; the detail of each corner is left in `<corner>/analysis.log`. With `--verbose` (`"verbose": true` in the JSON) everything is printed on screen as before.
+- Do not use `--vdd` in this mode: the power is computed with the VDD of each corner.
 
-### 7.4 Curva de sintonía desde `.raw` ya simulados
+### 7.4 Tuning curve from already-simulated `.raw` files
 ```bash
 python3 osc_characterization.py tuning \
   --run 300u:a.raw --run 400u:b.raw --run 500u:c.raw \
@@ -211,21 +212,21 @@ python3 osc_characterization.py tuning \
 
 ## 7b. Monte Carlo (`mc`)
 
-Un solo subcomando; el número de valores de control define el caso:
+A single subcommand; the number of control values defines the case:
 
-- **Un valor** (o ninguno, el netlist tal cual): MC en un punto de operación (histograma, σ, rendimiento).
-- **Varios valores**: cada pieza (semilla) se simula en todos los valores; se obtiene la curva de sintonía por pieza, Kvco por pieza y el rango cubierto por ~90 % de las piezas ([p95 de fmin, p5 de fmax]).
+- **One value** (or none, the netlist as is): MC at one operating point (histogram, σ, yield).
+- **Several values**: each sample (seed) is simulated at all the values; you get the per-sample tuning curve, the per-sample Kvco and the range covered by ~90 % of the samples ([p95 of fmin, p5 of fmax]).
 
-Modos (`--mc-mode`):
+Modes (`--mc-mode`):
 
-| Modo | Qué varía | Esquinas permitidas |
+| Mode | What varies | Allowed corners |
 |---|---|---|
-| `mismatch` | solo desapareo entre transistores (`sw_stat_mismatch=1`) | **cualquiera** (`--corner`/`--corners`: ss, ff, fs, sf, typical, presets) |
-| `global` | solo variación de proceso global (`sw_stat_global=1`) | solo typical |
-| `both` | global + mismatch | solo typical |
-| `split` | corre los tres y reporta el reparto de varianza (σ²_both vs σ²_g+σ²_m) | mismatch en todas; global/both solo en typical (con aviso) |
+| `mismatch` | only mismatch between transistors (`sw_stat_mismatch=1`) | **any** (`--corner`/`--corners`: ss, ff, fs, sf, typical, presets) |
+| `global` | only global process variation (`sw_stat_global=1`) | typical only |
+| `both` | global + mismatch | typical only |
+| `split` | runs the three and reports the variance split (σ²_both vs σ²_g+σ²_m) | mismatch in all; global/both only in typical (with a warning) |
 
-Motivo: la sección `statistical` del PDK está centrada en typical y reemplaza a la sección de esquina, así que global/both no tienen sentido en ss/ff. El mismatch (`fets_mm`) sí funciona sobre cualquier esquina determinista.
+Reason: the `statistical` section of the PDK is centered on typical and replaces the corner section, so global/both make no sense in ss/ff. Mismatch (`fets_mm`) does work on any deterministic corner.
 
 ```bash
 python3 osc_characterization.py mc --netlist CS_Pseudo_diff_N4.spice \
@@ -233,52 +234,52 @@ python3 osc_characterization.py mc --netlist CS_Pseudo_diff_N4.spice \
   --ctrl-scale 1e-6 --pos "v(n1)" --neg "v(n3)" --isupply "i(v7)" --vdd 3.3 \
   --corners worst3 --mc-mode split --mc-n 100 --spec f:560meg:640meg \
   --jobs 4 --threads 1 --outdir results/mc
-# o con JSON: python3 osc_characterization.py --config configs/cs_diff_mc.json
+# or with JSON: python3 osc_characterization.py --config configs/cs_diff_mc.json
 ```
 
-Opciones: `--mc-n` (muestras, default 100), `--mc-seed` (semilla maestra; la misma lista de semillas se usa en todos los casos, modos y valores de control), `--mc-skew` (3 = 1σ del PDK), `--spec METRICA:MIN:MAX` (repetible, para el rendimiento), `--min-amp` (fracción de VDD bajo la cual la muestra se considera "no oscila" y cuenta como fallo, default 0.05), `--keep-raw`, `--no-mc-plots`.
+Options: `--mc-n` (samples, default 100), `--mc-seed` (master seed; the same list of seeds is used in all cases, modes and control values), `--mc-skew` (3 = 1σ of the PDK), `--spec METRIC:MIN:MAX` (repeatable, for the yield), `--min-amp` (fraction of VDD below which the sample is considered "not oscillating" and counts as a failure, default 0.05), `--keep-raw`, `--no-mc-plots`.
 
-Salidas: `mc_samples.csv` (una fila por simulación), `mc_summary.csv`, `mc_report.txt`, `mc_split.csv`, `mc_hist*.png`, `mc_tuning.png`, `mc_split.png`, `mc_corners.png`; carpetas `<esquina>/<modo>/runs/`.
+Outputs: `mc_samples.csv` (one row per simulation), `mc_summary.csv`, `mc_report.txt`, `mc_split.csv`, `mc_hist*.png`, `mc_tuning.png`, `mc_split.png`, `mc_corners.png`; folders `<corner>/<mode>/runs/`.
 
-Costo = casos × valores × (1 nominal + modos × N). Error estándar de σ ≈ σ/√(2(N−1)): N=100 → ~7 %, N=200 → ~5 %. Las muestras que no oscilan (o sin frecuencia medible) se marcan como fallo y bajan el rendimiento, no entran en media/σ.
+Cost = cases × values × (1 nominal + modes × N). Standard error of σ ≈ σ/√(2(N−1)): N=100 → ~7 %, N=200 → ~5 %. Samples that do not oscillate (or have no measurable frequency) are marked as failures and lower the yield; they do not enter the mean/σ.
 
-## 8. Archivos de salida
+## 8. Output files
 
-**`analyze`** (carpeta `--outdir`, por defecto `osc_analysis/`)
+**`analyze`** (`--outdir` folder, `osc_analysis/` by default)
 
-| Archivo | Contenido |
+| File | Contents |
 |---|---|
-| `osc_summary.txt` | informe completo (el mismo que se imprime) |
-| `osc_metrics.json` | todas las métricas, avisos y `.tran` sugerido, para procesarlas con otros scripts |
-| `osc_overview.png`, `osc_eye.png`, `osc_jitter.png`, `osc_spectrum.png` | formas de onda y arranque, ojo, jitter, espectro |
-| `config_used.json` | opciones efectivas con las que se hizo el análisis |
+| `osc_summary.txt` | full report (the same one that is printed) |
+| `osc_metrics.json` | all metrics, warnings and suggested `.tran`, to process them with other scripts |
+| `osc_overview.png`, `osc_eye.png`, `osc_jitter.png`, `osc_spectrum.png` | waveforms and start-up, eye, jitter, spectrum |
+| `config_used.json` | effective options with which the analysis was made |
 
-**`sweep` / `tuning`** (carpeta `--outdir`, por defecto `osc_sweep/` y `osc_tuning/`)
+**`sweep` / `tuning`** (`--outdir` folder, `osc_sweep/` and `osc_tuning/` by default)
 
-| Archivo | Contenido |
+| File | Contents |
 |---|---|
-| `tuning.csv` | `ctrl, f, amp, vcm, idd, power, energy, t90, thd, kvco, phase, phase_err, nwarn, ok` (`ctrl` en unidades escaladas; `f` en Hz; `power` en W; `energy` en J; `kvco` en Hz por unidad de `ctrl`; `ok=0` si ese punto falló) |
-| `osc_tuning.png` | f, Kvco, amplitud y modo común, potencia y energía por ciclo (y fase y THD si hay `--phase-*`) |
-| `runs/` | por cada punto: el netlist modificado (`.spice`), el `.log` de ngspice y el `.raw` |
-| `run_<valor>/` | informe y métricas de ese punto |
-| `analysis.log` | solo con esquinas: el detalle del análisis de esa esquina (el que antes se imprimía en pantalla) |
-| `config_used.json` | opciones efectivas |
+| `tuning.csv` | `ctrl, f, amp, vcm, idd, power, energy, t90, thd, kvco, phase, phase_err, nwarn, ok` (`ctrl` in scaled units; `f` in Hz; `power` in W; `energy` in J; `kvco` in Hz per unit of `ctrl`; `ok=0` if that point failed) |
+| `osc_tuning.png` | f, Kvco, amplitude and common mode, power and energy per cycle (and phase and THD if `--phase-*` is given) |
+| `runs/` | for each point: the modified netlist (`.spice`), the ngspice `.log` and the `.raw` |
+| `run_<value>/` | report and metrics of that point |
+| `analysis.log` | only with corners: the detail of the analysis of that corner (what used to be printed on screen) |
+| `config_used.json` | effective options |
 
-**Con esquinas**, además: una subcarpeta por esquina (`ss_125C_3V/`, `typical_60C_3.3V/`, `ff_-40C_3.6V/`, cada una con lo anterior) y, en la carpeta principal:
+**With corners**, in addition: one subfolder per corner (`ss_125C_3V/`, `typical_60C_3.3V/`, `ff_-40C_3.6V/`, each with the above) and, in the main folder:
 
-| Archivo | Contenido |
+| File | Contents |
 |---|---|
-| `corners_tuning.png` | las curvas de todas las esquinas superpuestas (f, Kvco, amplitud, potencia, energía, THD o fase), con el rango total sombreado y el rango común a todas |
-| `corners_summary.csv` | por esquina: fmin, fmax, rango de sintonía (%), Kvco medio, potencias mínima y máxima |
-| `corners_tuning.csv` | frecuencia de cada esquina para cada valor de control |
+| `corners_tuning.png` | the curves of all corners overlaid (f, Kvco, amplitude, power, energy, THD or phase), with the total range shaded and the range common to all |
+| `corners_summary.csv` | per corner: fmin, fmax, tuning range (%), mean Kvco, minimum and maximum power |
+| `corners_tuning.csv` | frequency of each corner for each control value |
 
-## 9. Archivos de configuración JSON
+## 9. JSON configuration files
 
-Todo lo que se pasa por la línea de comandos puede vivir en un JSON, con el mismo nombre de la opción (con guion o guion bajo). Ejemplo (`configs/cs_diff_worst3.json` hereda de `cs_diff_base.json`):
+Everything that is passed on the command line can live in a JSON file, with the same name as the option (with hyphen or underscore). Example (`configs/cs_diff_worst3.json` inherits from `cs_diff_base.json`):
 
 ```json
 {
-  "_nota": "Barrido de ibias en ss/125C/3.0V, typical/60C/3.3V y ff/-40C/3.6V",
+  "_note": "ibias sweep at ss/125C/3.0V, typical/60C/3.3V and ff/-40C/3.6V; 600 MHz target",
   "extends": "cs_diff_base.json",
   "command": "sweep",
   "corners": ["worst3"],
@@ -288,67 +289,67 @@ Todo lo que se pasa por la línea de comandos puede vivir en un JSON, con el mis
 }
 ```
 
-- `command`: `analyze`, `tuning` o `sweep`. Con eso basta `python3 osc_characterization.py --config archivo.json`.
-- `extends`: hereda otro JSON (uno o varios); lo del archivo hijo tiene prioridad.
-- Las **opciones de la línea de comandos tienen prioridad** sobre el JSON: `--config cs_diff_worst3.json --jobs 1 --outdir prueba`.
-- Las rutas de archivos de entrada (`netlist`, `raw_path`, archivos de `run`) son **relativas al JSON**; `outdir` es relativo a donde ejecutas.
-- Las listas se escriben como listas (`"values": ["300u", "400u"]`); las opciones activables (`single_ended`, `noisy`) son `true`/`false`; `path_sub` acepta una lista de `"VIEJO=NUEVO"` o un objeto `{"viejo": "nuevo"}`.
-- Se permiten líneas completas de comentario que empiecen con `//` y claves que empiecen con `_`.
-- Una clave desconocida da un error con sugerencia (`did you mean ['netlist']?`).
-- **`--save-config archivo.json`** convierte un comando que ya te funcionó en un JSON (escribe el archivo y termina, no simula).
-- Cada ejecución deja un `config_used.json` en su carpeta de salida, reutilizable con `--config` para repetirla.
+- `command`: `analyze`, `tuning` or `sweep`. With that, `python3 osc_characterization.py --config file.json` is enough.
+- `extends`: inherits another JSON (one or several); what is in the child file takes priority.
+- **Command-line options take priority** over the JSON: `--config cs_diff_worst3.json --jobs 1 --outdir test`.
+- The paths of input files (`netlist`, `raw_path`, `run` files) are **relative to the JSON**; `outdir` is relative to where you run.
+- Lists are written as lists (`"values": ["300u", "400u"]`); switch options (`single_ended`, `noisy`) are `true`/`false`; `path_sub` accepts a list of `"OLD=NEW"` or an object `{"old": "new"}`.
+- Whole-line comments starting with `//` and keys starting with `_` are allowed.
+- An unknown key gives an error with a suggestion (`did you mean ['netlist']?`).
+- **`--save-config file.json`** turns a command that already worked for you into a JSON (it writes the file and exits, it does not simulate).
+- Every run leaves a `config_used.json` in its output folder, reusable with `--config` to repeat it.
 
-## 10. Rendimiento y paralelismo
+## 10. Performance and parallelism
 
-| Opción | Valor por defecto | Para qué |
+| Option | Default | Purpose |
 |---|---|---|
-| `--jobs N` | 1 | simulaciones ngspice en paralelo |
-| `--threads N` | 1 | hilos por proceso de ngspice (se fuerza `set num_threads=N` en el `.control` de cada corrida; `0` = no tocar) |
-| `--omp-wait` | `auto` | política `OMP_WAIT_POLICY`: sin tocar en serie; con `jobs>1` solo `passive` si `--threads 0` o `jobs × threads` excede las CPUs |
-| `--timeout S` | 300 | tiempo máximo por corrida; una corrida atorada se marca `FAILED` y el barrido continúa (0 = sin límite) |
+| `--jobs N` | 1 | parallel ngspice simulations |
+| `--threads N` | 1 | threads per ngspice process (`set num_threads=N` is forced in the `.control` of each run; `0` = leave untouched) |
+| `--omp-wait` | `auto` | `OMP_WAIT_POLICY` policy: untouched in serial; with `jobs>1` only `passive` if `--threads 0` or `jobs × threads` exceeds the CPUs |
+| `--timeout S` | 300 | maximum time per run; a stuck run is marked `FAILED` and the sweep continues (0 = no limit) |
 
-Recomendaciones (medidas con otra herramienta del repo, `isfpn.py`, en una máquina de 16 núcleos físicos):
+Recommendations (measured with another tool in the repo, `isfpn.py`, on a machine with 16 physical cores):
 
-- **Varios procesos de un hilo ganan a pocos procesos con varios hilos**; por eso `--threads 1` es el valor por defecto.
-- Sube `--jobs` hasta el número de núcleos **físicos** como máximo.
-- El tiempo total es "rondas × tiempo por corrida": con 15 corridas, `--jobs 5` da 3 rondas exactas; `--jobs 4` da 4. El script avisa al inicio si con menos jobs obtendrías las mismas rondas.
-- Si ngspice en tu entorno usa muchos hilos por proceso (un `set num_threads=8` en `.spiceinit`, por ejemplo), `--threads 1` lo anula.
-- Los resultados son idénticos para cualquier `--jobs`.
-- Si una corrida falla (no converge, timeout), el barrido continúa; el script solo termina con error si fallan **todas**.
+- **Several single-thread processes beat a few processes with several threads**; that is why `--threads 1` is the default.
+- Raise `--jobs` up to the number of **physical** cores at most.
+- The total time is "rounds × time per run": with 15 runs, `--jobs 5` gives exactly 3 rounds; `--jobs 4` gives 4. The script warns at the start if with fewer jobs you would get the same number of rounds.
+- If ngspice in your environment uses many threads per process (a `set num_threads=8` in `.spiceinit`, for example), `--threads 1` overrides it.
+- The results are identical for any `--jobs`.
+- If a run fails (does not converge, timeout), the sweep continues; the script exits with an error only if **all** of them fail.
 
-## 11. Uso como librería
+## 11. Use as a library
 
 ```python
 from osc_characterization import characterize, default_config
 
 cfg = default_config(pos="v(n1)", neg="v(n3)", vdd=3.3, isupply="i(v7)")
-res, informe = characterize("run.raw", cfg, outdir="salida", plots=False)
-res["freq"]["f"], res["amplitude"]["diff"]["amp"], res["warnings"], res.get("suggested_tran")  # solo existe si hay algo que corregir
+res, report = characterize("run.raw", cfg, outdir="out", plots=False)
+res["freq"]["f"], res["amplitude"]["diff"]["amp"], res["warnings"], res.get("suggested_tran")  # only exists if there is something to fix
 ```
 
-Pensado para reutilizarlo desde futuros scripts de PVT y Monte Carlo.
+Intended to be reused from future PVT and Monte Carlo scripts.
 
-## 12. Limitaciones y notas
+## 12. Limitations and notes
 
-- **Monte Carlo** y **ruido de fase** (ISF de Hajimiri) todavía no están integrados; el ruido de fase se estima con `Python_tools/isfpn/isfpn.py`.
-- `sweep` varía **un** parámetro de control a la vez, y los mismos valores se usan en todas las esquinas.
-- La línea que se reemplaza debe estar en **una sola línea** (no se manejan continuaciones con `+`). Con `--line-prefix .param` solo se reescribe la **primera** línea `.param`, por eso la plantilla debe repetir los demás parámetros.
-- En esquinas PVT, `VDD` y `TEMP` deben ser parámetros (`.param`); si el VDD aparece como número fijo en una fuente, el script no puede cambiarlo.
-- Con `.ic` y `uic` el arranque es por desbalance impuesto, no por ruido: los tiempos de arranque sirven para comparar, no como valor absoluto.
-- Las simulaciones sin ruido dan solo jitter numérico (piso del simulador).
-- Para simulaciones en las que el oscilador no arranca (por ejemplo, en una esquina lenta), el punto se reporta con avisos o como `ok=0`, y el barrido continúa.
+- **Monte Carlo** and **phase noise** (Hajimiri's ISF) are not yet integrated; phase noise is estimated with `Python_tools/isfpn/isfpn.py`.
+- `sweep` varies **one** control parameter at a time, and the same values are used in all corners.
+- The line to be replaced must be on **a single line** (`+` continuations are not handled). With `--line-prefix .param` only the **first** `.param` line is rewritten, which is why the template must repeat the other parameters.
+- In PVT corners, `VDD` and `TEMP` must be parameters (`.param`); if VDD appears as a fixed number in a source, the script cannot change it.
+- With `.ic` and `uic` the start-up is by imposed imbalance, not by noise: the start-up times are useful for comparison, not as an absolute value.
+- Simulations without noise give only numerical jitter (the simulator floor).
+- For simulations in which the oscillator does not start (for example, in a slow corner), the point is reported with warnings or as `ok=0`, and the sweep continues.
 
-## 13. Problemas frecuentes
+## 13. Troubleshooting
 
-| Síntoma | Causa y solución |
+| Symptom | Cause and solution |
 |---|---|
-| `The line to replace was not found` | `--line-prefix` no coincide con el inicio de ninguna línea del netlist |
-| `The netlist has no 'write file.raw' line` | falta `write archivo.raw` dentro de `.control` |
-| `No '.lib <file> <section>' line ...` | con esquinas, el netlist necesita un `.lib` con la sección `typical`, `ff`, `ss`, `fs` o `sf` |
-| `No 'VDD=' found in a .param line` | con esquinas, `VDD=` y `TEMP=` deben estar en un `.param` |
-| `file dialect is not specified` / error leyendo el `.raw` | `.raw` que no es de ngspice o `spicelib` desactualizado |
-| `ngspice did not produce ...raw` | revisa el `.log` de esa corrida en `runs/` (ruta del PDK, convergencia) |
-| `ngspice timed out` | corrida atorada; sube `--timeout` o revisa el `.log` |
-| Avisos de pocos puntos por periodo o de pocos ciclos | usa el `.tran` sugerido en el informe |
-| El sistema se vuelve lento con `--jobs` alto | baja `--jobs`; mantén `--threads 1` |
-| `Error: unknown key ... in config.json` | clave mal escrita en el JSON |
+| `The line to replace was not found` | `--line-prefix` does not match the start of any netlist line |
+| `The netlist has no 'write file.raw' line` | `write file.raw` is missing inside `.control` |
+| `No '.lib <file> <section>' line ...` | with corners, the netlist needs a `.lib` with the section `typical`, `ff`, `ss`, `fs` or `sf` |
+| `No 'VDD=' found in a .param line` | with corners, `VDD=` and `TEMP=` must be in a `.param` |
+| `file dialect is not specified` / error reading the `.raw` | a `.raw` that is not from ngspice, or an outdated `spicelib` |
+| `ngspice did not produce ...raw` | check the `.log` of that run in `runs/` (PDK path, convergence) |
+| `ngspice timed out` | stuck run; raise `--timeout` or check the `.log` |
+| Warnings about few points per period or few cycles | use the `.tran` suggested in the report |
+| The system becomes slow with a high `--jobs` | lower `--jobs`; keep `--threads 1` |
+| `Error: unknown key ... in config.json` | misspelled key in the JSON |

@@ -1,9 +1,9 @@
-* ===== Libreria de VCO ideales (comportamentales) =====
-* Puertos: vctrl (entrada de control, V) y out (salida, referida a tierra global 0)
-* Frecuencia: f = f0 + kvco*(v(vctrl)-vc0). Fase acumulada en CICLOS (C=1F integra f[Hz]).
-* Salida rail-to-rail 0..vdd con flancos finitos: vdd/2*(1+tanh(sharp*sin(2*pi*fase))).
+* ===== Library of ideal (behavioral) VCOs =====
+* Ports: vctrl (control input, V) and out (output, referenced to global ground 0)
+* Frequency: f = f0 + kvco*(v(vctrl)-vc0). Accumulated phase in CYCLES (C=1F integrates f[Hz]).
+* Rail-to-rail output 0..vdd with finite edges: vdd/2*(1+tanh(sharp*sin(2*pi*phase))).
 *
-* VCO sin ruido
+* Noiseless VCO
 .subckt vco_ideal vctrl out params: vdd=3.3 f0=500meg kvco=80meg vc0=1.65 sharp=8
 Gph 0 ph value={f0 + kvco*(v(vctrl)-vc0)}
 Cph ph 0 1 ic=0
@@ -11,9 +11,9 @@ Rph ph 0 1e15
 Bout out 0 v={vdd/2*(1+tanh(sharp*sin(2*pi*v(ph))))}
 .ends vco_ideal
 *
-* VCO con ruido de fase: ruido BLANCO de frecuencia inyectado en el integrador
-* L(f) = sigf^2*dt/f^2 (-20 dB/dec); L1m = nivel a 1 MHz de offset [dBc/Hz].
-* IMPORTANTE: dt debe ser igual al paso (tstep) del .tran.
+* VCO with phase noise: WHITE frequency noise injected into the integrator
+* L(f) = sigf^2*dt/f^2 (-20 dB/dec); L1m = level at 1 MHz offset [dBc/Hz].
+* IMPORTANT: dt must be equal to the step (tstep) of the .tran.
 .subckt vco_ideal_noisy vctrl out params: vdd=3.3 f0=500meg kvco=80meg vc0=1.65 sharp=8 L1m=-100 dt=10p
 .param sigf={sqrt(10**(L1m/10)*1e12/dt)}
 Vn nz 0 dc 0 trnoise({sigf} {dt} 0 0 0 0 0)

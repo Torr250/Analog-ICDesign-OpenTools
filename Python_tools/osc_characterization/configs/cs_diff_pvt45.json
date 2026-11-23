@@ -1,5 +1,5 @@
 {
-  "_nota": "Barrido de ibias en la malla PVT completa (45 esquinas x valores de control). Puede tardar: usa --jobs segun tus nucleos fisicos",
+  "_note": "ibias sweep over the full PVT grid (45 corners x control values). It can take a long time: use --jobs according to your physical cores",
   "extends": "cs_diff_base.json",
   "command": "sweep",
   "corners": ["pvt45"],

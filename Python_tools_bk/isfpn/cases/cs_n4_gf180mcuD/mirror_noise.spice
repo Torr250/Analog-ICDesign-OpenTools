@@ -1,0 +1,20 @@
+* Mirror block (gf180mcuD): short-circuit noise current into VCS (VCS fixed at its mean value)
+Vdd VDD 0 {VDD}
+I0 VBP 0 500u
+R1 VCS vx 1 noisy=0
+Vfix vx 0 {VNODE} ac 1
+XM17 VCS VBP VDD VDD pfet_03v3 L=0.6u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=50
+XM18 VBP VBP VDD VDD pfet_03v3 L=0.6u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=50
+.temp {TEMP}
+.lib {LIB}
+.GLOBAL VDD
+.control
+ op
+ print i(Vfix) v(vbp)
+ noise v(vcs,vx) Vfix dec 2 1 1e10
+ setplot noise1
+ wrdata mirror_noise.txt onoise_spectrum
+.endc
+.end

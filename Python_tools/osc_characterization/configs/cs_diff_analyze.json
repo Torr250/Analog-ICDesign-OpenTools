@@ -1,5 +1,5 @@
 {
-  "_nota": "Analiza UN .raw ya simulado del oscilador diferencial (sin correr ngspice)",
+  "_note": "Analyzes ONE already-simulated .raw of the differential oscillator (does not run ngspice)",
   "command": "analyze",
   "raw_path": "../CS_Pseudo_diff_N4.raw",
   "pos": "v(n1)", "neg": "v(n3)",

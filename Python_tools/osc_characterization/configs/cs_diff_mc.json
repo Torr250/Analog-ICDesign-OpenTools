@@ -1,5 +1,5 @@
 {
-  "_nota": "Monte Carlo (split) en un punto: 500 uA, N=100. Mismatch en ss/typical/ff; global y both solo en typical. Para curvas por pieza pon varios valores en 'values'.",
+  "_note": "Monte Carlo (split) at one operating point: 500 uA, N=100. Mismatch in ss/typical/ff; global and both only in typical. For per-sample curves put several values in 'values'.",
   "extends": "cs_diff_base.json",
   "command": "mc",
   "values": ["500u"],

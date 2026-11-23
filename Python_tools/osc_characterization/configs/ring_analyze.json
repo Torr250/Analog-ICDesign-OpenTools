@@ -1,5 +1,5 @@
 {
-  "_nota": "Analiza UN .raw ya simulado del ring de 3 inversores (single-ended)",
+  "_note": "Analyzes ONE already-simulated .raw of the 3-inverter ring (single-ended)",
   "command": "analyze",
   "raw_path": "../Ring_InvN3.raw",
   "signal": "v(n1)", "single_ended": true,

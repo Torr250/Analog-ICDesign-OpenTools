@@ -1,0 +1,28 @@
+* ============================================================
+* Modelo de canal: SOLO pérdida (filtro shelving, 3 etapa(s) en
+* cascada), sin líneas de transmisión ni reflexión
+* generado por channel_model_generator.py
+*
+* Pérdida ajustada: 0.000 dB en DC, 12.000 dB @ 4.0000 GHz, 22.000 dB @ 8.0000 GHz
+* fp1=2.928113 GHz   fp2=10.651306 GHz   (por etapa, x3 etapas)
+*
+* Uso: X1 nodo_entrada nodo_salida CHANNEL_MODEL
+* La entrada tiene impedancia infinita (sensa, no carga) y la
+* salida es una fuente ideal (impedancia de salida cero) -- no
+* representa Z0 ni reflexiones, solo la forma de pérdida en magnitud.
+* ============================================================
+.subckt CHANNEL_MODEL in out
+Ebuf_in1 mid_in1 0 in 0 1
+R1 mid_in1 mid_r1 5.435409e+01
+C1 mid_r1 0 1.000000e-12
+Bshelf1 shelf_out1 0 V = V(mid_r1) + (V(mid_in1)-V(mid_r1))*0.274906500
+Ebuf_in2 mid_in2 0 shelf_out1 0 1
+R2 mid_in2 mid_r2 5.435409e+01
+C2 mid_r2 0 1.000000e-12
+Bshelf2 shelf_out2 0 V = V(mid_r2) + (V(mid_in2)-V(mid_r2))*0.274906500
+Ebuf_in3 mid_in3 0 shelf_out2 0 1
+R3 mid_in3 mid_r3 5.435409e+01
+C3 mid_r3 0 1.000000e-12
+Bshelf3 shelf_out3 0 V = V(mid_r3) + (V(mid_in3)-V(mid_r3))*0.274906500
+Epad out 0 shelf_out3 0 1.000000000
+.ends

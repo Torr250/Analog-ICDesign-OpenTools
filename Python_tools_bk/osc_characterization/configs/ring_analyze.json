@@ -1,0 +1,9 @@
+{
+  "_nota": "Analiza UN .raw ya simulado del ring de 3 inversores (single-ended)",
+  "command": "analyze",
+  "raw_path": "../Ring_InvN3.raw",
+  "signal": "v(n1)", "single_ended": true,
+  "vdd": 3.3,
+  "isupply": "i(v7)",
+  "outdir": "results/ring_analyze"
+}

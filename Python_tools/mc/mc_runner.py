@@ -2,31 +2,31 @@
 """
 mc_runner.py
 
-Corre el testbench TB_not (inversor CMOS, gf180mcuD) con Monte Carlo
-habilitado (sw_stat_global=1, sw_stat_mismatch=1) N veces, y recolecta:
-  1. Los resultados escalares de los .meas (trise, tfall, tplh, tphl,
-     tpd_avg, ivdd_rms, effy) en un CSV, una fila por corrida.
-  2. Un .raw individual por corrida (para graficar/comparar formas de
-     onda entre muestras de Monte Carlo).
+Runs the TB_not testbench (CMOS inverter, gf180mcuD) with Monte Carlo
+enabled (sw_stat_global=1, sw_stat_mismatch=1) N times, and collects:
+  1. The scalar results of the .meas (trise, tfall, tplh, tphl,
+     tpd_avg, ivdd_rms, effy) in a CSV, one row per run.
+  2. An individual .raw per run (to plot/compare waveforms between
+     Monte Carlo samples).
 
-A diferencia del runner de PVT, acá NO se sustituye nada del netlist entre
-corridas (mismo corner, mismo VDD, misma temp) — cada invocación de
-'ngspice -b' es un proceso independiente que arranca con su propia semilla
-aleatoria del sistema, así que basta con correr el netlist N veces.
+Unlike the PVT runner, here NOTHING is substituted in the netlist between
+runs (same corner, same VDD, same temp) — each invocation of
+'ngspice -b' is an independent process that starts with its own random
+seed from the system, so it is enough to run the netlist N times.
 
-IMPORTANTE: no hay forma de fijar/reproducir la semilla de una corrida
-puntual (ver nota en el netlist) — cada corrida es única e irrepetible.
+IMPORTANT: there is no way to fix/reproduce the seed of a particular run
+(see the note in the netlist) — each run is unique and unrepeatable.
 
-Uso:
-    # 1) Corre el barrido Monte Carlo (genera CSV + .raw por corrida)
-    python3 mc_runner.py sweep                # 200 corridas (default), secuencial
+Usage:
+    # 1) Run the Monte Carlo sweep (generates CSV + one .raw per run)
+    python3 mc_runner.py sweep                # 200 runs (default), sequential
     python3 mc_runner.py sweep --n 500
-    python3 mc_runner.py sweep --n 500 --jobs 8   # 8 corridas de ngspice en paralelo
+    python3 mc_runner.py sweep --n 500 --jobs 8   # 8 ngspice runs in parallel
 
-    # 2) Superpone las formas de onda de varias corridas en un solo plot
-    python3 mc_runner.py plot                         # superpone todas las corridas disponibles
-    python3 mc_runner.py plot --n-overlay 30          # superpone solo 30 (muestra aleatoria)
-    python3 mc_runner.py plot --n-overlay 30 --mode first   # las primeras 30, sin azar
+    # 2) Overlay the waveforms of several runs in a single plot
+    python3 mc_runner.py plot                         # overlays all the available runs
+    python3 mc_runner.py plot --n-overlay 30          # overlays only 30 (random sample)
+    python3 mc_runner.py plot --n-overlay 30 --mode first   # the first 30, no randomness
     python3 mc_runner.py plot --signals "v(outb)" "v(in)"
 """
 
@@ -62,7 +62,7 @@ RAW_FILENAME_RE = re.compile(r"mc_run_(?P<idx>\d+)\.raw$")
 
 
 # ----------------------------------------------------------------------
-# sweep: corre N veces, guarda CSV + .raw por corrida (igual que antes)
+# sweep: runs N times, saves CSV + one .raw per run (same as before)
 # ----------------------------------------------------------------------
 
 def raw_path_for(run_idx: int) -> str:
@@ -70,7 +70,7 @@ def raw_path_for(run_idx: int) -> str:
 
 
 def build_netlist(template_text: str, run_idx: int) -> str:
-    """Solo redirige el 'write' a un .raw único por corrida; nada más cambia."""
+    """Only redirects the 'write' to a unique .raw per run; nothing else changes."""
     raw_path = raw_path_for(run_idx)
     return template_text.replace(f"write {TEMPLATE_RAW_NAME}", f"write {raw_path}")
 
@@ -78,7 +78,7 @@ def build_netlist(template_text: str, run_idx: int) -> str:
 def run_ngspice(netlist_path: str) -> str:
     result = subprocess.run(["ngspice", "-b", netlist_path], capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"  [!] ngspice devolvió código {result.returncode} para {netlist_path}", file=sys.stderr)
+        print(f"  [!] ngspice returned code {result.returncode} for {netlist_path}", file=sys.stderr)
         if result.stderr:
             print(f"      stderr: {result.stderr.strip()[:300]}", file=sys.stderr)
     return result.stdout
@@ -95,9 +95,9 @@ def parse_meas(stdout: str, meas_name: str):
 
 
 def run_one(template_text: str, run_idx: int) -> dict:
-    """Ejecuta UNA corrida completa (netlist -> ngspice -> parseo) y devuelve
-    todo lo necesario para reportar progreso y escribir el CSV. Esta función
-    es la unidad de trabajo que se manda al pool de threads."""
+    """Executes ONE complete run (netlist -> ngspice -> parsing) and returns
+    everything needed to report progress and write the CSV. This function
+    is the unit of work that is sent to the thread pool."""
     raw_path = raw_path_for(run_idx)
     netlist = build_netlist(template_text, run_idx)
 
@@ -131,7 +131,7 @@ def cmd_sweep(args):
     jobs = args.jobs
 
     if not os.path.isfile(TEMPLATE):
-        print(f"Error: no se encontró el template '{TEMPLATE}' en el directorio actual.", file=sys.stderr)
+        print(f"Error: template '{TEMPLATE}' not found in the current directory.", file=sys.stderr)
         sys.exit(1)
 
     os.makedirs(WORKDIR, exist_ok=True)
@@ -140,12 +140,12 @@ def cmd_sweep(args):
     with open(TEMPLATE, "r") as f:
         template_text = f.read()
 
-    # results indexado por posición para poder reordenar al final, ya que
-    # las corridas paralelas no necesariamente terminan en orden
+    # results indexed by position so they can be reordered at the end, since
+    # the parallel runs do not necessarily finish in order
     results = [None] * n_runs
     done = 0
 
-    print(f"Corriendo {n_runs} muestras de Monte Carlo con {jobs} worker(s) en paralelo...\n")
+    print(f"Running {n_runs} Monte Carlo samples with {jobs} worker(s) in parallel...\n")
 
     with ThreadPoolExecutor(max_workers=jobs) as executor:
         futures = {executor.submit(run_one, template_text, i): i for i in range(1, n_runs + 1)}
@@ -158,14 +158,14 @@ def cmd_sweep(args):
             done += 1
 
             if not outcome["raw_ok"]:
-                print(f"    [!] corrida {run_idx}: no se generó el .raw esperado "
-                      f"({outcome['raw_path']}); revisar {outcome['log_fname']}")
+                print(f"    [!] run {run_idx}: the expected .raw was not generated "
+                      f"({outcome['raw_path']}); check {outcome['log_fname']}")
             if outcome["missing"]:
-                print(f"    [!] corrida {run_idx}: no se pudo extraer "
-                      f"{', '.join(outcome['missing'])} (revisar {outcome['log_fname']})")
+                print(f"    [!] run {run_idx}: could not extract "
+                      f"{', '.join(outcome['missing'])} (check {outcome['log_fname']})")
 
             if done % 10 == 0 or done == n_runs:
-                print(f"[{done}/{n_runs}] corridas completadas")
+                print(f"[{done}/{n_runs}] runs completed")
 
     fieldnames = ["run"] + MEAS_NAMES
     with open(OUTPUT_CSV, "w", newline="") as f:
@@ -173,21 +173,21 @@ def cmd_sweep(args):
         writer.writeheader()
         writer.writerows(results)
 
-    print(f"\nListo. {len(results)} corridas completadas.")
-    print(f"  CSV de mediciones : {OUTPUT_CSV}")
+    print(f"\nDone. {len(results)} runs completed.")
+    print(f"  Measurements CSV  : {OUTPUT_CSV}")
     print(f"  Netlists + logs   : {WORKDIR}/")
     print(f"  Waveforms (.raw)  : {RAWDIR}/")
 
 
 # ----------------------------------------------------------------------
-# plot: superpone las formas de onda de N corridas en un solo gráfico
+# plot: overlays the waveforms of N runs in a single plot
 # ----------------------------------------------------------------------
 
 def load_waveform(raw_path: str, signal: str = "v(outb)"):
-    """Devuelve (time, values) de una señal dentro de un .raw generado por ngspice."""
+    """Returns (time, values) of a signal inside a .raw generated by ngspice."""
     if RawRead is None:
         raise RuntimeError(
-            "spicelib no está instalado. Instalalo con:\n"
+            "spicelib is not installed. Install it with:\n"
             "    pip install spicelib --break-system-packages"
         )
     raw = RawRead(raw_path, dialect="ngspice")
@@ -197,7 +197,7 @@ def load_waveform(raw_path: str, signal: str = "v(outb)"):
 
 
 def discover_mc_raws(raw_dir: str):
-    """Escanea raw_dir y devuelve [(run_idx, path), ...] ordenado por índice de corrida."""
+    """Scans raw_dir and returns [(run_idx, path), ...] sorted by run index."""
     entries = []
     if not os.path.isdir(raw_dir):
         return entries
@@ -215,7 +215,7 @@ def cmd_plot(args):
     entries = discover_mc_raws(raw_dir)
 
     if not entries:
-        print(f"Error: no se encontraron .raw en '{raw_dir}/'. ¿Corriste 'sweep' primero?", file=sys.stderr)
+        print(f"Error: no .raw files found in '{raw_dir}/'. Did you run 'sweep' first?", file=sys.stderr)
         sys.exit(1)
 
     total_available = len(entries)
@@ -235,8 +235,8 @@ def cmd_plot(args):
 
     os.makedirs(PLOTDIR, exist_ok=True)
 
-    print(f"Superponiendo {len(selected)} de {total_available} corridas disponibles "
-          f"(modo: {args.mode if n_overlay < total_available else 'todas'})...")
+    print(f"Overlaying {len(selected)} of {total_available} available runs "
+          f"(mode: {args.mode if n_overlay < total_available else 'all'})...")
 
     for signal in args.signals:
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -245,13 +245,13 @@ def cmd_plot(args):
             try:
                 time, values = load_waveform(raw_path, signal=signal)
             except Exception as exc:
-                print(f"  [!] no se pudo leer {raw_path} ({signal}): {exc}", file=sys.stderr)
+                print(f"  [!] could not read {raw_path} ({signal}): {exc}", file=sys.stderr)
                 continue
             ax.plot(time * 1e9, values, color="steelblue", alpha=0.35, linewidth=0.9)
 
-        ax.set_xlabel("Tiempo (ns)")
+        ax.set_xlabel("Time (ns)")
         ax.set_ylabel(f"{signal} (V)")
-        ax.set_title(f"Monte Carlo — {signal}  ({len(selected)} corridas superpuestas)")
+        ax.set_title(f"Monte Carlo — {signal}  ({len(selected)} overlaid runs)")
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
 
@@ -259,7 +259,7 @@ def cmd_plot(args):
         fname = os.path.join(PLOTDIR, f"mc_overlay_{safe_signal}_{len(selected)}runs.png")
         plt.savefig(fname, dpi=150)
         plt.close()
-        print(f"Guardado: {fname}")
+        print(f"Saved: {fname}")
 
 
 # ----------------------------------------------------------------------
@@ -268,25 +268,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    p_sweep = subparsers.add_parser("sweep", help="Corre N muestras de Monte Carlo y guarda CSV + .raw por corrida")
-    p_sweep.add_argument("--n", type=int, default=N_RUNS, help=f"Número de corridas (default: {N_RUNS})")
+    p_sweep = subparsers.add_parser("sweep", help="Runs N Monte Carlo samples and saves CSV + one .raw per run")
+    p_sweep.add_argument("--n", type=int, default=N_RUNS, help=f"Number of runs (default: {N_RUNS})")
     p_sweep.add_argument("--jobs", "-j", type=int, default=1,
-                          help="Corridas en paralelo (default: 1 = secuencial, como antes). "
-                               "Usar ~os.cpu_count() para aprovechar todos los núcleos.")
+                          help="Parallel runs (default: 1 = sequential, as before). "
+                               "Use ~os.cpu_count() to take advantage of all the cores.")
     p_sweep.set_defaults(func=cmd_sweep)
 
-    p_plot = subparsers.add_parser("plot", help="Superpone las formas de onda de varias corridas en un solo gráfico")
-    p_plot.add_argument("--raw-dir", default=RAWDIR, help=f"Directorio con los .raw (default: {RAWDIR})")
+    p_plot = subparsers.add_parser("plot", help="Overlays the waveforms of several runs in a single plot")
+    p_plot.add_argument("--raw-dir", default=RAWDIR, help=f"Directory with the .raw files (default: {RAWDIR})")
     p_plot.add_argument("--n-overlay", type=int, default=None,
-                         help="Cuántas corridas superponer (default: todas las disponibles)")
+                         help="How many runs to overlay (default: all the available ones)")
     p_plot.add_argument("--mode", choices=["random", "first"], default="random",
-                         help="Si --n-overlay es menor al total: 'random' (muestra al azar, default) "
-                              "o 'first' (las primeras N corridas, sin azar)")
+                         help="If --n-overlay is smaller than the total: 'random' (random sample, default) "
+                              "or 'first' (the first N runs, no randomness)")
     p_plot.add_argument("--seed", type=int, default=None,
-                         help="Semilla para la selección aleatoria de corridas (reproducibilidad de QUÉ corridas "
-                              "se grafican, no de la simulación en sí)")
+                         help="Seed for the random selection of runs (reproducibility of WHICH runs "
+                              "are plotted, not of the simulation itself)")
     p_plot.add_argument("--signals", nargs="+", default=["v(outb)"],
-                         help="Señales a graficar, una figura por señal (default: v(outb))")
+                         help="Signals to plot, one figure per signal (default: v(outb))")
     p_plot.set_defaults(func=cmd_plot)
 
     args = parser.parse_args()

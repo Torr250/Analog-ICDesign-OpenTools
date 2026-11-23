@@ -1,7 +1,7 @@
 // Common settings of the differential current-starved ring oscillator (CS_Pseudo_diff_N4.spice).
 // Other configs inherit this one with "extends". Input-file paths are relative to THIS file.
 {
-  "_nota": "Base: CS diferencial gf180mcuD. Heredado por cs_diff_nominal.json y cs_diff_worst3.json",
+  "_note": "Base: differential current-starved ring oscillator, gf180mcuD. Inherited by cs_diff_nominal.json and cs_diff_worst3.json",
   "netlist": "../CS_Pseudo_diff_N4.spice",
   "line_prefix": "I0",
   "template": "I0 VBP 0 {v}",

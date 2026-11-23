@@ -2,37 +2,36 @@
 """
 eye_diagram.py
 
-Genera un diagrama de ojo a partir de un .raw de ngspice, plegando la señal
-en ventanas de N*UI (UI = 1/freq) e interpolando cada ventana a una grilla
-temporal comun antes de superponerlas.
+Generates an eye diagram from an ngspice .raw file, folding the signal
+into windows of N*UI (UI = 1/freq) and interpolating each window onto a
+common time grid before overlaying them.
 
-CENTRADO AUTOMATICO DEL OJO: en vez de asumir que los cruces caen en un
-punto fijo de la ventana, el script primero escanea la señal cruda para
-encontrar TODOS los cruces por el umbral, calcula la fase promedio de esos
-cruces respecto a la grilla ideal de bit (esto captura el retardo de
-propagacion total del circuito, cualquiera que sea), y usa esa fase para
-plegar las ventanas ya centradas: el CENTRO del ojo queda en 0 UI, el
-cruce izquierdo idealmente en -0.5 UI, y el derecho en +0.5 UI. Esto
-funciona sin importar cuanto delay tenga el circuito (una etapa, varias
-etapas en cascada, etc.) porque el delay se mide de los datos, no se
-asume.
+AUTOMATIC EYE CENTERING: instead of assuming that the crossings fall at a
+fixed point of the window, the script first scans the raw signal to find
+ALL the threshold crossings, computes the average phase of those crossings
+with respect to the ideal bit grid (this captures the total propagation
+delay of the circuit, whatever it is), and uses that phase to fold the
+windows already centered: the CENTER of the eye ends up at 0 UI, the left
+crossing ideally at -0.5 UI, and the right one at +0.5 UI. This works
+regardless of how much delay the circuit has (one stage, several stages in
+cascade, etc.) because the delay is measured from the data, not assumed.
 
-UMBRAL DE DECISION OPTIMO: por default, en vez de asumir VDD/2 como
-umbral de cruce, el script barre voltajes candidatos y se queda con el
-que MINIMIZA el jitter de los cruces (dispersion temporal). Esto es
-necesario porque VDD/2 (o el punto medio entre niveles alto/bajo) solo
-coincide con el punto de cruce real cuando el circuito tiene flancos de
-subida/bajada simetricos — en drivers con dinamica asimetrica entre
-flancos, el cruce real de la señal puede estar lejos de ese punto medio.
-Se puede desactivar con --no-refine-threshold para usar VDD/2 tal cual.
+OPTIMAL DECISION THRESHOLD: by default, instead of assuming VDD/2 as the
+crossing threshold, the script sweeps candidate voltages and keeps the one
+that MINIMIZES the jitter of the crossings (temporal dispersion). This is
+necessary because VDD/2 (or the midpoint between the high and low levels)
+only coincides with the real crossing point when the circuit has symmetric
+rising/falling edges — in drivers with asymmetric dynamics between edges,
+the real crossing of the signal can be far from that midpoint.
+It can be disabled with --no-refine-threshold to use VDD/2 as is.
 
-Uso:
+Usage:
     python3 eye_diagram.py TB_not_PRBS.raw --freq 1e9
     python3 eye_diagram.py TB_not_PRBS.raw --freq 1e9 --signal v(out)
     python3 eye_diagram.py TB_not_PRBS.raw --freq 1e9 --skip-ui 5 --ui-window 2
     python3 eye_diagram.py TB_not_PRBS.raw --freq 1e9 --vdd 3.3
 
-Requiere: spicelib, numpy, matplotlib
+Requires: spicelib, numpy, matplotlib
     pip install spicelib numpy matplotlib --break-system-packages
 """
 
@@ -52,7 +51,7 @@ except ImportError:
 def load_waveform(raw_path: str, signal: str):
     if RawRead is None:
         raise RuntimeError(
-            "spicelib no está instalado. Instalalo con:\n"
+            "spicelib is not installed. Install it with:\n"
             "    pip install spicelib --break-system-packages"
         )
     raw = RawRead(raw_path, dialect="ngspice")
@@ -63,14 +62,14 @@ def load_waveform(raw_path: str, signal: str):
 
 def detect_threshold(values: np.ndarray, vdd: float = None, center_voltage: float = None) -> float:
     """
-    Estimación INICIAL del umbral (el barrido de refine_threshold la
-    corrige después, así que no hace falta que sea muy precisa):
-      - Si se pasa center_voltage: se usa tal cual (para diferencial u
-        otras señales donde el cruce no es VDD/2).
-      - Si se pasa vdd: VDD/2 (para single-ended 0 a VDD).
-      - Si no se pasa nada: (max+min)/2 de los datos — funciona para
-        ambos casos sin necesidad de que el usuario indique el rango de
-        voltajes explícitamente.
+    INITIAL estimate of the threshold (the sweep of refine_threshold
+    corrects it afterwards, so it does not need to be very precise):
+      - If center_voltage is passed: it is used as is (for differential or
+        other signals where the crossing is not VDD/2).
+      - If vdd is passed: VDD/2 (for single-ended 0 to VDD).
+      - If nothing is passed: (max+min)/2 of the data — works for
+        both cases without the user having to state the voltage
+        range explicitly.
     """
     if center_voltage is not None:
         return center_voltage
@@ -80,9 +79,9 @@ def detect_threshold(values: np.ndarray, vdd: float = None, center_voltage: floa
 
 
 def find_all_crossings(time: np.ndarray, values: np.ndarray, threshold: float, t_min: float):
-    """Encuentra TODOS los cruces de 'values' por 'threshold' después de
-    t_min, con interpolación lineal para precisión sub-muestra. Devuelve
-    un array de tiempos absolutos de cruce (en segundos)."""
+    """Finds ALL the crossings of 'values' through 'threshold' after
+    t_min, with linear interpolation for sub-sample precision. Returns
+    an array of absolute crossing times (in seconds)."""
     mask = time >= t_min
     t = time[mask]
     v = values[mask]
@@ -104,22 +103,22 @@ def find_all_crossings(time: np.ndarray, values: np.ndarray, threshold: float, t
 
 def detect_center_phase(crossing_times: np.ndarray, ui: float) -> float:
     """
-    Calcula la fase promedio (0 a 1, en unidades de UI) en la que ocurren
-    los cruces, respecto a la grilla ideal de bit (múltiplos de UI desde
-    t=0). Esto captura el retardo de propagación total del circuito,
-    cualquiera que sea, midiéndolo de los datos en vez de asumirlo.
+    Computes the average phase (0 to 1, in UI units) at which the
+    crossings occur, with respect to the ideal bit grid (multiples of the UI
+    from t=0). This captures the total propagation delay of the circuit,
+    whatever it is, measuring it from the data instead of assuming it.
 
-    Usa un promedio circular (vía vectores en el círculo unitario) porque
-    la fase "envuelve" en 1.0 -> 0.0 y un promedio aritmético directo
-    fallaría si las muestras están cerca de ese punto de wrap-around.
+    It uses a circular average (via vectors on the unit circle) because
+    the phase "wraps" at 1.0 -> 0.0 and a direct arithmetic average would
+    fail if the samples are near that wrap-around point.
 
-    Devuelve fase_centro_del_ojo = (fase_promedio_de_cruces + 0.5) mod 1.0
-    — es decir, el punto medio entre dos cruces consecutivos, que es
-    donde el ojo está más abierto (el mejor punto de muestreo).
+    Returns eye_center_phase = (average_crossing_phase + 0.5) mod 1.0
+    — that is, the midpoint between two consecutive crossings, which is
+    where the eye is most open (the best sampling point).
     """
     if len(crossing_times) == 0:
-        raise ValueError("No se detectó ningún cruce por el umbral en la señal; "
-                          "no se puede centrar el ojo automáticamente.")
+        raise ValueError("No threshold crossing was detected in the signal; "
+                          "the eye cannot be centered automatically.")
 
     phases = (crossing_times / ui) % 1.0
     angles = phases * 2 * np.pi
@@ -133,20 +132,20 @@ def detect_center_phase(crossing_times: np.ndarray, ui: float) -> float:
 def fold_eye_centered(time: np.ndarray, values: np.ndarray, ui: float, n_ui_window: float,
                        skip_time: float, oversample: int, center_phase: float):
     """
-    Pliega la señal en ventanas de ancho n_ui_window*UI, YA CENTRADAS: el
-    grid devuelto va de -n_ui_window/2 a +n_ui_window/2 (en UI), con 0
-    correspondiendo al centro del ojo (punto de máxima apertura) y los
-    cruces esperados cerca de -0.5 y +0.5.
+    Folds the signal into windows of width n_ui_window*UI, ALREADY CENTERED: the
+    returned grid goes from -n_ui_window/2 to +n_ui_window/2 (in UI), with 0
+    corresponding to the center of the eye (point of maximum opening) and the
+    expected crossings near -0.5 and +0.5.
 
-    center_phase viene de detect_center_phase(): es el offset (0 a 1, en
-    UI) que hay que sumarle a cada múltiplo de UI para ubicar el centro
-    real del ojo (compensando el delay de propagación del circuito).
+    center_phase comes from detect_center_phase(): it is the offset (0 to 1, in
+    UI) that must be added to each multiple of the UI to locate the real
+    center of the eye (compensating for the propagation delay of the circuit).
     """
     window_width = n_ui_window * ui
     t_end = time[-1]
 
     n_points_grid = int(oversample * n_ui_window) + 1
-    grid_rel = np.linspace(-window_width / 2, window_width / 2, n_points_grid)  # segundos, centrado en 0
+    grid_rel = np.linspace(-window_width / 2, window_width / 2, n_points_grid)  # seconds, centered at 0
     grid_in_ui = grid_rel / ui
 
     rows = []
@@ -167,17 +166,17 @@ def fold_eye_centered(time: np.ndarray, values: np.ndarray, ui: float, n_ui_wind
 
     if not rows:
         raise ValueError(
-            "No se pudo generar ninguna ventana centrada: revisa que skip_time + "
-            "n_ui_window*UI no supere la duracion total de la simulacion."
+            "No centered window could be generated: check that skip_time + "
+            "n_ui_window*UI does not exceed the total duration of the simulation."
         )
 
     return grid_in_ui, np.array(rows)
 
 
 def circular_jitter_std(crossing_times: np.ndarray, ui: float) -> float:
-    """Dispersión circular (en segundos) de la fase de los cruces respecto
-    a la grilla de UI. Menor valor = cruces más consistentes en el tiempo
-    = mejor candidato de umbral de decisión."""
+    """Circular dispersion (in seconds) of the phase of the crossings with respect
+    to the UI grid. Lower value = more consistent crossings in time
+    = better decision-threshold candidate."""
     if len(crossing_times) < 2:
         return np.inf
     phases = (crossing_times / ui) % 1.0
@@ -192,21 +191,21 @@ def refine_threshold(time: np.ndarray, values: np.ndarray, ui: float, skip_time:
                       initial_threshold: float, n_coarse: int = 60, n_fine: int = 40,
                       search_margin: float = 0.05):
     """
-    Encuentra el umbral de decisión "verdadero" barriendo voltajes
-    candidatos y quedándose con el que MINIMIZA el jitter de los cruces
-    (dispersión temporal). Este es el criterio físicamente correcto y
-    general: coincide con el punto medio entre niveles alto/bajo SOLO
-    cuando el circuito tiene flancos de subida/bajada simétricos: en
-    drivers con dinámica asimétrica entre flancos (ej. drivers
-    segmentados con pull-up/pull-down desbalanceados), el punto de cruce
-    real de la señal puede estar bastante lejos de ese punto medio, y
-    tomar VDD/2 (o el punto medio de niveles) como umbral introduce un
-    sesgo artificial en las mediciones de jitter.
+    Finds the "true" decision threshold by sweeping candidate voltages and
+    keeping the one that MINIMIZES the jitter of the crossings (temporal
+    dispersion). This is the physically correct and general criterion: it
+    coincides with the midpoint between high/low levels ONLY when the
+    circuit has symmetric rising/falling edges: in drivers with asymmetric
+    dynamics between edges (e.g. segmented drivers with unbalanced
+    pull-up/pull-down), the real crossing point of the signal can be quite
+    far from that midpoint, and taking VDD/2 (or the midpoint of the levels)
+    as the threshold introduces an artificial bias in the jitter
+    measurements.
 
-    Hace una búsqueda en dos etapas (gruesa sobre todo el rango de la
-    señal, fina alrededor del mejor candidato de la etapa gruesa).
+    It performs a two-stage search (coarse over the whole range of the
+    signal, fine around the best candidate of the coarse stage).
 
-    Devuelve (threshold_refinado, offset_respecto_al_inicial, historial).
+    Returns (refined_threshold, offset_with_respect_to_the_initial, history).
     """
     vmin, vmax = values.min(), values.max()
     margin = (vmax - vmin) * search_margin
@@ -221,14 +220,14 @@ def refine_threshold(time: np.ndarray, values: np.ndarray, ui: float, skip_time:
 
     def best_by_jitter_with_min_count(scored, min_count_frac=0.9):
         """
-        Entre los candidatos evaluados, descarta los que capturan MUCHOS
-        MENOS cruces que el máximo observado (< min_count_frac del máximo).
-        Esto evita que la búsqueda se enganche con un umbral que da jitter
-        artificialmente bajo solo porque captura un subconjunto chico y no
-        representativo de las transiciones (típico con ISI severo, donde
-        aparecen varias "familias" de cruces a distintos niveles) -- el
-        umbral real debe capturar TODAS las transiciones, no solo las más
-        consistentes entre sí.
+        Among the evaluated candidates, discards those that capture MANY
+        FEWER crossings than the observed maximum (< min_count_frac of the maximum).
+        This prevents the search from locking onto a threshold that gives
+        artificially low jitter only because it captures a small,
+        unrepresentative subset of the transitions (typical with severe ISI,
+        where several "families" of crossings appear at different levels) --
+        the real threshold must capture ALL the transitions, not just the
+        ones most consistent with each other.
         """
         counts = [len(c) for _, c in scored]
         if not counts:
@@ -244,8 +243,8 @@ def refine_threshold(time: np.ndarray, values: np.ndarray, ui: float, skip_time:
     coarse_raw = sweep(vmin + margin, vmax - margin, n_coarse)
     coarse_best = best_by_jitter_with_min_count(coarse_raw)
     if coarse_best is None:
-        # no se pudo evaluar ningún candidato (señal sin suficientes cruces);
-        # devolvemos el umbral inicial sin cambios
+        # no candidate could be evaluated (signal without enough crossings);
+        # we return the initial threshold unchanged
         return initial_threshold, 0.0, [initial_threshold]
 
     best_coarse_v = coarse_best[0]
@@ -267,13 +266,13 @@ def plot_eye(grid_in_ui: np.ndarray, matrix: np.ndarray, signal: str, ui: float,
     for row in matrix:
         ax.plot(grid_in_ui, row, color="steelblue", alpha=0.15, linewidth=0.8)
 
-    ax.axvline(-0.5, color="darkorange", linestyle="--", linewidth=1, label="cruce izq. ideal (-0.5 UI)")
-    ax.axvline(0.5, color="darkorange", linestyle="--", linewidth=1, label="cruce der. ideal (+0.5 UI)")
-    ax.axvline(0.0, color="green", linestyle=":", linewidth=1, label="centro del ojo (0 UI)")
+    ax.axvline(-0.5, color="darkorange", linestyle="--", linewidth=1, label="ideal left crossing (-0.5 UI)")
+    ax.axvline(0.5, color="darkorange", linestyle="--", linewidth=1, label="ideal right crossing (+0.5 UI)")
+    ax.axvline(0.0, color="green", linestyle=":", linewidth=1, label="eye center (0 UI)")
 
-    ax.set_xlabel("Tiempo (UI, 0 = centro del ojo)")
+    ax.set_xlabel("Time (UI, 0 = eye center)")
     ax.set_ylabel(f"{signal} (V)")
-    ax.set_title(f"Diagrama de ojo — {signal}  (UI = {ui*1e12:.1f} ps, {n_windows} ventanas plegadas)")
+    ax.set_title(f"Eye diagram — {signal}  (UI = {ui*1e12:.1f} ps, {n_windows} folded windows)")
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -282,40 +281,40 @@ def plot_eye(grid_in_ui: np.ndarray, matrix: np.ndarray, signal: str, ui: float,
     fname = os.path.join(outdir, f"eye_{safe_signal}.png")
     plt.savefig(fname, dpi=150)
     plt.close()
-    print(f"Guardado: {fname}")
+    print(f"Saved: {fname}")
     return fname
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("raw_path", help="Ruta al archivo .raw de ngspice")
-    parser.add_argument("--freq", type=float, required=True, help="Frecuencia de bit (Hz). UI = 1/freq")
-    parser.add_argument("--signal", default="v(out)", help="Señal a graficar (default: v(out))")
+    parser.add_argument("raw_path", help="Path to the ngspice .raw file")
+    parser.add_argument("--freq", type=float, required=True, help="Bit frequency (Hz). UI = 1/freq")
+    parser.add_argument("--signal", default="v(out)", help="Signal to plot (default: v(out))")
     parser.add_argument("--vdd", type=float, default=None,
-                         help="VDD del circuito (para señales SINGLE-ENDED de 0 a VDD), fija el umbral "
-                              "inicial en VDD/2. NO usar para señales diferenciales — usar "
-                              "--center-voltage en su lugar, o simplemente omitir ambos flags.")
+                         help="Circuit VDD (for SINGLE-ENDED signals from 0 to VDD), sets the initial "
+                              "threshold at VDD/2. Do NOT use for differential signals — use "
+                              "--center-voltage instead, or simply omit both flags.")
     parser.add_argument("--center-voltage", type=float, default=None,
-                         help="Umbral inicial explícito, en Volts, sin dividir por nada (útil para "
-                              "señales DIFERENCIALES centradas cerca de 0V, o cualquier señal cuyo "
-                              "cruce no sea VDD/2). Si se omite (junto con --vdd), se auto-detecta "
-                              "como (max+min)/2 de los datos — funciona bien tanto para single-ended "
-                              "como para diferencial, ya que no asume ningún rango de voltajes fijo.")
+                         help="Explicit initial threshold, in Volts, not divided by anything (useful for "
+                              "DIFFERENTIAL signals centered near 0V, or any signal whose "
+                              "crossing is not VDD/2). If omitted (together with --vdd), it is auto-detected "
+                              "as (max+min)/2 of the data — it works well for both single-ended "
+                              "and differential, since it assumes no fixed voltage range.")
     parser.add_argument("--no-refine-threshold", action="store_true",
-                         help="Desactiva la búsqueda del umbral óptimo (ver refine_threshold()). "
-                              "Si se pasa, se usa VDD/2 (o el auto-detectado) tal cual, sin buscar "
-                              "el voltaje que minimiza el jitter de los cruces.")
+                         help="Disables the search for the optimal threshold (see refine_threshold()). "
+                              "If passed, VDD/2 (or the auto-detected value) is used as is, without searching "
+                              "for the voltage that minimizes the jitter of the crossings.")
     parser.add_argument("--ui-window", type=float, default=2.0,
-                         help="Ancho de cada ventana plegada, en UI (default: 2.0)")
+                         help="Width of each folded window, in UI (default: 2.0)")
     parser.add_argument("--skip-ui", type=float, default=2.0,
-                         help="Cuántos UI iniciales descartar como transitorio de arranque (default: 2.0)")
+                         help="How many initial UI to discard as start-up transient (default: 2.0)")
     parser.add_argument("--oversample", type=int, default=200,
-                         help="Puntos por UI en la grilla interpolada (default: 200)")
-    parser.add_argument("--outdir", default="eye_analysis", help="Directorio de salida (default: eye_analysis)")
+                         help="Points per UI in the interpolated grid (default: 200)")
+    parser.add_argument("--outdir", default="eye_analysis", help="Output directory (default: eye_analysis)")
     args = parser.parse_args()
 
     if not os.path.isfile(args.raw_path):
-        print(f"Error: no se encontró '{args.raw_path}'", file=sys.stderr)
+        print(f"Error: '{args.raw_path}' not found", file=sys.stderr)
         sys.exit(1)
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -324,33 +323,33 @@ def main():
     print(f"UI = {ui*1e12:.2f} ps  (freq = {args.freq:.3e} Hz)")
 
     time, values = load_waveform(args.raw_path, args.signal)
-    print(f"Señal '{args.signal}' cargada: {len(time)} puntos, "
-          f"de t={time[0]*1e9:.2f}ns a t={time[-1]*1e9:.2f}ns")
+    print(f"Signal '{args.signal}' loaded: {len(time)} points, "
+          f"from t={time[0]*1e9:.2f}ns to t={time[-1]*1e9:.2f}ns")
 
     threshold_initial = detect_threshold(values, args.vdd, args.center_voltage)
     skip_time = args.skip_ui * ui
 
     if args.no_refine_threshold:
         threshold, offset, history = threshold_initial, 0.0, [threshold_initial]
-        print(f"Umbral usado (refinamiento desactivado): {threshold:.4f} V")
+        print(f"Threshold used (refinement disabled): {threshold:.4f} V")
     else:
         threshold, offset, history = refine_threshold(time, values, ui, skip_time, threshold_initial)
-        print(f"Umbral inicial (VDD/2 o auto)     : {threshold_initial:.4f} V")
-        print(f"Umbral refinado (mínimo jitter)   : {threshold:.4f} V")
-        print(f"Offset detectado                  : {offset*1e3:+.2f} mV")
+        print(f"Initial threshold (VDD/2 or auto) : {threshold_initial:.4f} V")
+        print(f"Refined threshold (minimum jitter): {threshold:.4f} V")
+        print(f"Detected offset                   : {offset*1e3:+.2f} mV")
 
     all_crossings = find_all_crossings(time, values, threshold, skip_time)
     center_phase, mean_phase = detect_center_phase(all_crossings, ui)
-    print(f"Cruces detectados para auto-centrado: {len(all_crossings)}")
-    print(f"Fase promedio de los cruces respecto a la grilla ideal: {mean_phase*ui*1e12:.2f} ps "
-          f"({mean_phase:.4f} UI)  <- esto es el delay de propagación total detectado")
-    print(f"Fase del centro del ojo (usada para plegar): {center_phase:.4f} UI")
+    print(f"Crossings detected for auto-centering: {len(all_crossings)}")
+    print(f"Average phase of the crossings with respect to the ideal grid: {mean_phase*ui*1e12:.2f} ps "
+          f"({mean_phase:.4f} UI)  <- this is the total propagation delay detected")
+    print(f"Phase of the eye center (used for folding): {center_phase:.4f} UI")
 
     grid_in_ui, matrix = fold_eye_centered(time, values, ui, args.ui_window, skip_time,
                                             args.oversample, center_phase)
     n_windows = matrix.shape[0]
-    print(f"Ventanas plegadas: {n_windows}  (ancho de ventana: {args.ui_window} UI, "
-          f"{args.oversample} puntos/UI)")
+    print(f"Folded windows: {n_windows}  (window width: {args.ui_window} UI, "
+          f"{args.oversample} points/UI)")
 
     plot_eye(grid_in_ui, matrix, args.signal, ui, n_windows, args.outdir)
 
@@ -359,7 +358,7 @@ def main():
              threshold=threshold, threshold_initial=threshold_initial, threshold_offset=offset,
              threshold_refined=not args.no_refine_threshold,
              center_phase=center_phase, mean_phase=mean_phase)
-    print(f"Datos plegados guardados en: {npz_path}  (para el calculo de métricas más adelante)")
+    print(f"Folded data saved to: {npz_path}  (for the later metrics calculation)")
 
 
 if __name__ == "__main__":
