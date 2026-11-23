@@ -1,0 +1,11 @@
+{
+  "_nota": "Analiza UN .raw ya simulado del oscilador diferencial (sin correr ngspice)",
+  "command": "analyze",
+  "raw_path": "../CS_Pseudo_diff_N4.raw",
+  "pos": "v(n1)", "neg": "v(n3)",
+  "vdd": 3.3,
+  "isupply": "i(v7)", "icore": "i(v1)",
+  "probe": ["v(vcs)"],
+  "phase_ref": "v(n13)", "phase_sig": ["v(n24)"], "phase_expected": [-90],
+  "outdir": "results/cs_diff_analyze"
+}

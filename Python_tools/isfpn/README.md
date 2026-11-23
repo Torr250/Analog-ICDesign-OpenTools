@@ -28,7 +28,7 @@ configuration file and delivers **L(Δf) in a CSV** ready to use in the PLL mode
 2. [Algorithm](#2-algorithm)
 3. [Requirements, installation and structure](#3-requirements-installation-and-structure)
 4. [What the program needs: netlist, config and blocks](#4-what-the-program-needs)
-5. [Stages: what each one does, how to run it, inputs, outputs and figures](#5-stages)
+5. [Stages: what each one does, how to run it, inputs, outputs and figures](#5-stages) - including 5.0 [speeding up a run](#50-speeding-up-a-run-what-to-change-in-the-config) and including 5.1 [running with parallel processes](#51-running-with-parallel-processes), 5.2 [benchmark script](#52-benchmark-script-toolsbench_jobspy), 5.3 [cheat sheet](#53-cheat-sheet-what-to-run-and-which-jobsthreads-to-use) 5.4 [sweep of a control value](#54-sweep-of-a-control-value-bias-current-vco-tuning) and 5.4a [target frequency](#54a-target-frequency-control-value-for-a-given-f0), 5.4b [where the results go: `runs/`](#54b-where-the-results-go-runs-names---tag---here) and 5.5 [output buffer: local ISF](#55-output-buffer-local-isf-additive-noise-floor)
 6. [Outputs: the CSV for the PLL model](#6-outputs-and-use-in-the-pll-model)
 7. [Without a Spectre reference: how to configure and what to verify](#7-without-a-spectre-reference)
 8. [Included cases and results](#8-included-cases-and-results)
@@ -171,6 +171,7 @@ isfpn/
 ├── isfpn.py                 program (docstring with all the config keys)
 ├── README.md                this document
 ├── tools/make_min_pdk.py    generates sky130A_min (and per-section libs)
+├── docs/PARALLEL_NGSPICE.md findings and recipe for running ngspice in parallel (jobs, threads, diagnosis)
 └── cases/
     ├── ring3_gf180mcuD/        3-inverter ring in gf180mcuD (3.3 V), NO external reference   (ring.json)
     ├── cs_n4_gf180mcuD/        4-stage current-starved with mirror in gf180mcuD, NO reference (cs.json, mirror_noise.spice)
@@ -211,11 +212,16 @@ bias sources and, in the CS, **also the mirror and the current source** (XM17, X
 | `dq_fc` | 1.0 | pulse charge [fC] (according to stage 1) |
 | `n_phase` | 30 | points per period (+1 for closure) |
 | `nodes` | `"auto"` | nodes to perturb. `"auto"` = all D/S of the core FETs that are not rails (+ the node of each block) |
-| `skip_devices` | `[]` | FETs not treated as core |
+| `skip_devices` | `[]` | FETs not treated as core: exact names or regular expressions (full match, case-insensitive), e.g. `["XM17","XM18","XM(19|[23][0-9]|4[0-2])"]` for the mirror plus XM19..XM42 |
+| `local` | (absent) | output-buffer analysis (local ISF), see 5.5: `{"nodes":[...],"devices":"auto","n_phase":40,"window":0.3,"cross":3,"nlate":3}` |
 | `blocks` | `[]` | blocks: `{"name","node","file","out","th_freq"}` (see 4.3) |
 | `compare_file` | (absent) | reference table `f[Hz] L[dBc/Hz]`; if missing, nothing is compared (section 7) |
+| `sweep` | (absent) | sweep of a control value (bias current, ...) run with `isfpn.py CFG sweep`: see section 5.4 |
 | `df_list` | 10k..100M | offsets printed in `report.txt` |
 | `csv_grid` | `{"fmin":1e3,"fmax":1e9,"ppd":20}` | grid of the final CSV |
+| `jobs` | 1 | parallel ngspice processes (also `ISFPN_JOBS=N`) in the stages `lin` (one per ΔQ), `isf` (one per phase), `noise` (one per transistor) and `blocks` (one per block); `baseline` and `combine` are single steps. The results do not depend on `jobs`. Default serial. With `jobs` > 1 the tool launches ngspice with `OMP_WAIT_POLICY=passive` (OpenMP threads sleep instead of busy-waiting, which otherwise makes simultaneous ngspice runs fight for the cores and stall); in serial it is not set because the default policy is faster. Each phase is an independent run, so on a multi-core PC `jobs` = 2-4 divides the time; if ngspice stalls in parallel, `run_timeout` stops it and you can go back to 1 (in the sandbox where this was developed, parallel runs hung until `OMP_WAIT_POLICY=passive` was set) |
+| `threads` | 1 | OpenMP threads per ngspice process. The tool injects `set num_threads=N` in every `.control` (also in block benches), because a `num_threads` set in `~/.spiceinit`/`spinit` (as in some containers, e.g. IIC-OSIC-TOOLS) overrides `OMP_NUM_THREADS` and makes each ngspice use many cores, which slows small circuits down and prevents `jobs` from scaling. `0` leaves ngspice's own setting. Check with `docker stats` or `top`: serial should use ~100 % CPU |
+| `run_timeout` | 300 | maximum seconds per ngspice run; on timeout the netlist `r_<tag>.spice` is kept so you can run `ngspice -b` on it by hand. `ISFPN_VERBOSE=1` prints every ISF point with its time |
 | `reltol` | 1e-5 | ngspice tolerance (needed to see voltage jumps of tens of mV) |
 
 ### 4.3 Netlist of a special block (`blocks`)
@@ -251,6 +257,50 @@ python3 ../../isfpn.py CFG.json baseline | lin [NODE] | isf | noise | blocks | c
 ```
 `plots` regenerates all the figures from the saved files, without simulating.
 
+**Measuring the run time.** `all` prints a timing line at the end and writes `timing.json` (time per stage, total, `jobs`, `threads`); a single stage prints `[stage: N s]`. To document the speed-up with `jobs`:
+```bash
+for J in 1 2 4 8; do ISFPN_JOBS=$J python3 ../../isfpn.py CFG.json all > run_j$J.log 2>&1; cp timing.json timing_j$J.json; done
+python3 -c "import json,glob; [print(f['jobs'], round(f['total_s']), f['stages_s']) for f in sorted((json.load(open(x)) for x in glob.glob('timing_j*.json')), key=lambda d: d['jobs'])]"
+```
+The results are identical for every `jobs`; only the time changes.
+
+### 5.0 Speeding up a run (what to change in the config)
+Almost all the time is spent in the ngspice transients of `lin` and `isf`, and it is set by the transient settings in the JSON, not by the netlist. Measured on the gf180mcuD ring (T0 = 1.6 ns) and on the current-starved oscillator with mirror (T0 = 1.7 ns); "Γ error" is the largest difference in Γ against the default settings (`tstep 1p`, `reltol 1e-5`, `nper 20`), relative to Γ rms, at 4 phases of N1 (and VCS in the CS):
+
+| Change | Speed-up per run (ring / CS) | Γ error (ring / CS) |
+|---|---|---|
+| `tstep` 1p → 2p | 1.7× / 1.9× | 0.22 % / 0.02 % |
+| `tstep` 1p → 5p | 4.3× / 4.8× | 0.16 % / 0.23 % |
+| `reltol` 1e-5 → 1e-4 | 1.1× / - | 0.2 % / - |
+| `nper` 20 → 10 | 1.4× / 1.3× | 0.00 % / 0.00 % |
+| `tstep 2p` + `reltol 1e-4` + `nper 10` + shorter `settle`/`tstop` | 3.6× / 3.5× | 0.22 % / 0.02 % |
+
+- **`tstep` is the main lever**: in `tran tstep tstop` it is also the maximum internal step, so `1p` forces ~1600 points per period. Keep at least ~300 points per period (`T0/tstep`).
+- **`nper`**: 10 periods were enough for these oscillators because the amplitude transient dies out quickly; check that the closure and linearity checks still pass. It also lets you shorten `tstop` and `settle` (the run only has to cover `settle + (nper+13)·T0`).
+- **End-to-end check on the CS** with `tstep 2p`, `reltol 1e-4`, `nper 10`, `settle 15n`, `tstop 60n`: L(Δf) identical to the default settings (0.000 dB at 100 kHz, 1 MHz, 10 MHz and 100 MHz), all checks passed, whole flow 92 s with `jobs=2` in a 2-core sandbox.
+- **Validate once** any new setting: run the case with the default settings and with the fast ones, and compare `phase_noise.csv`; an error of ~0.2 % in Γ is ~0.02 dB in L. Not measured: reducing `n_phase`.
+- **The netlist itself matters little**: the tool builds its own runs (it only reads the devices, capacitors and sources of `core.cir`), so `save all`, `write ....raw` or the `.control` of your interactive netlists are not used. In your own interactive runs, avoid saving every vector (`save` only what you need) and a very small `tstep`.
+
+### 5.1 Running with parallel processes
+Each ngspice run in `lin` (one per ΔQ), `isf` (one per phase), `noise` (one per transistor) and `blocks` (one per block) is independent, so they can run at the same time. `baseline` (one transient) and `combine`/`compare`/`plots` (seconds) are not parallelized.
+
+```bash
+cd cases/cs_n4_gf180mcuD
+ISFPN_VERBOSE=1 ISFPN_JOBS=8 python3 ../../isfpn.py cs.json all       # 8 ngspice processes at a time
+```
+or set `"jobs": 8` in the JSON (the environment variable wins). `jobs=1` (default) is serial.
+
+| What | How |
+|---|---|
+| Number of processes | `jobs` / `ISFPN_JOBS`: use about the number of **physical** cores (`nproc` may count hyperthreads; check with `lscpu`). Measured on a 16-core machine (2 × Xeon Bronze 3106, no hyperthreading; CS gf180mcuD, whole flow): 1 / 2 / 4 / 8 / 12 / 16 jobs → 27.9 / 14.8 / 7.8 / 4.3 / 3.3 / 2.5 min (1.9× / 3.6× / 6.5× / 8.5× / 11.2×); the ISF stage alone scales 7.5× with 8 jobs. With the fast settings of 5.0 and 8 jobs: 78 s |
+| One thread per process | `threads` = 1 (default), also the best choice: with the same 8 cores 8 jobs × 1 thread takes 257 s, 4 × 2 takes 399 s and 1 × 8 takes 1181 s. The tool writes `set num_threads=1` in every `.control`, because a `num_threads` in `~/.spiceinit`/`spinit` (e.g. the IIC-OSIC-TOOLS container) overrides `OMP_NUM_THREADS`; without it each ngspice can use ~8 cores and parallel runs do not scale |
+| `OMP_WAIT_POLICY` | `ISFPN_OMP_WAIT=auto` (default): never set in serial (`passive` would make ngspice ~4× slower); with `jobs>1` it is `passive` only if `threads=0` or `jobs×threads` exceeds the visible CPUs (busy-waiting threads would stall), otherwise it is left alone. With `threads=1` the policy makes no difference (256 / 258 / 256 s for passive / active / none); with `threads=2` `passive` is harmful (634 s vs 399 s) |
+| Stuck run | `run_timeout` (300 s) stops it and keeps `r_<tag>.spice`; run `ngspice -b` on it by hand |
+| Check that it works | `docker stats` or `top`: serial ≈ 100 % CPU, `jobs=N` ≈ N·100 % |
+| Result | identical for any `jobs` (verified: difference 0.0 in Γ, in the transistor PSDs and in the mirror block) |
+
+Do not start parallel runs of the *program itself* in the same case directory (the intermediate files would collide); parallelism is inside each stage. If the environment has a CPU quota of one core (cgroup/VM), parallel runs do not help: keep `jobs=1`. The full diagnosis, the measurements and the open points are in [`docs/PARALLEL_NGSPICE.md`](docs/PARALLEL_NGSPICE.md).
+
 | Stage | What it does | Inputs | Outputs | Time |
 |---|---|---|---|---|
 | `baseline` | transient with `ref` and all nodes; crossings; $T_0$ | core, config | `base_ref.json` (T0, f0, crossings, std(T0)), `wave_base.txt`, `figs/fig1_baseline.png` | ~6 s |
@@ -267,6 +317,172 @@ Reading the figures: **fig1** must show a stable oscillation and the reference c
 **fig6**, $\mathcal L(\Delta f)$ (red zone = not valid) and the share per device; **fig7**, the comparison.
 
 ---
+
+### 5.2 Benchmark script (`tools/bench_jobs.py`)
+
+Runs a whole test matrix in one execution, from a case directory. For each run it saves `bench/<label>/timing.json`, `phase_noise.csv` and `run.log`, compares every CSV with the reference run (first `jobs=1` run) and prints a final table (total time, `isf` time, speed-up, max |ΔL| in dB, identical yes/no). Finished runs are skipped on re-launch (`--force` repeats them).
+
+```bash
+cd cases/cs_n4_gf180mcuD
+python3 ../../tools/bench_jobs.py cs.json --dry-run          # list the runs
+python3 ../../tools/bench_jobs.py cs.json                    # tests 1-5
+python3 ../../tools/bench_jobs.py cs.json --tests 6 --jobs 8 # OpenMP wait policy
+```
+
+| Test | What |
+|---|---|
+| 1 | correctness: `jobs=1` vs `jobs=8`, CSV must be identical |
+| 2 | jobs × threads with a fixed budget of 8 cores: 8×1, 4×2, 2×4, 1×8 (`--budget`) |
+| 3 | `jobs=12` and `jobs=16` |
+| 4 | fast settings (`tstep 2p`, `reltol 1e-4`, `nper 10`, `settle 15n`, `tstop 60n`) with `--jobs`; L should stay within ~0.1 dB |
+| 5 | repeatability: 3 runs of `jobs=8` (`--repeat`) |
+| 6 | `OMP_WAIT_POLICY` with `threads=1`: auto vs passive vs active vs untouched (`--jobs`) |
+| 7 | `threads=2` with policy untouched / passive: 4×2 and 8×2 (the latter needs 16 cores) |
+
+It uses two environment overrides that also work on their own: `ISFPN_THREADS=N` (overrides `threads`) and `ISFPN_OMP_WAIT=auto|passive|active|none` (policy used while `jobs > 1`). `bench/summary.json` accumulates the runs of all executions. A full run of tests 1-5 on the CS case is roughly 1 h on a 16-thread machine.
+
+### 5.3 Cheat sheet: what to run and which jobs/threads to use
+
+Measured on the reference machine (16 physical cores, CS gf180mcuD, whole flow). Rule of thumb: **`threads=1` and `jobs` = number of physical cores** (`lscpu`: sockets × cores per socket; `nproc` may count hyperthreads).
+
+| jobs × threads | Total time | Speed-up | Comment |
+|---|---|---|---|
+| 1 × 1 | 1674 s (27.9 min) | 1.0× | serial reference |
+| 8 × 1 | 257 s | 6.5× | |
+| 12 × 1 | 198 s | 8.5× | |
+| **16 × 1** | **150 s (2.5 min)** | **11.2×** | best measured; use this |
+| 4 × 2 (policy untouched) | 399 s | 4.2× | threads are less efficient than processes |
+| 2 × 4 / 1 × 8 | 1144 / 1181 s | 1.5× / 1.4× | avoid |
+| 8 × 1 + fast settings | 78 s | 21× | for exploration only (ΔL ≈ 0.0004 dB here) |
+
+**Everyday runs** (from the case directory, e.g. `cases/cs_n4_gf180mcuD`):
+```bash
+# 1. Normal run, all cores (add ISFPN_VERBOSE=1 to see the progress of every run)
+ISFPN_JOBS=16 python3 ../../isfpn.py cs.json all
+
+# 2. Same, keeping the console output and the timing table
+ISFPN_JOBS=16 python3 ../../isfpn.py cs.json all 2>&1 | tee all.log      # timing.json is also written
+
+# 3. Quick exploration: copy cs.json and add the fast settings (README 5.0), then run it with the same command
+#    "tstep": "2p", "reltol": 1e-4, "nper": 10, "settle": 1.5e-8, "tstop": 6e-8
+
+# 4. Different thread count / policy without editing the JSON
+ISFPN_JOBS=4 ISFPN_THREADS=2 ISFPN_OMP_WAIT=none python3 ../../isfpn.py cs.json all
+```
+
+**Benchmark script** (to re-measure on another machine or after changing the environment; run from the case directory):
+```bash
+python3 ../../tools/bench_jobs.py cs.json --dry-run            # list the runs, nothing is executed
+python3 ../../tools/bench_jobs.py cs.json                      # tests 1-5, about 1 h on the reference machine
+python3 ../../tools/bench_jobs.py cs.json --tests 1,3          # only correctness and jobs 12/16 (~1 h with the serial reference)
+python3 ../../tools/bench_jobs.py cs.json --tests 6 --jobs 8   # OpenMP policy with threads=1
+python3 ../../tools/bench_jobs.py cs.json --tests 7            # threads=2: 4x2 and 8x2 with the policy untouched
+python3 ../../tools/bench_jobs.py cs.json --tests 2 --budget 16 --force   # redo test 2 with a 16-core budget
+python3 ../../tools/bench_jobs.py cs.json 2>&1 | tee bench_table.log      # keep the final table
+```
+It writes `bench/<run>/{timing.json,phase_noise.csv,run.log}` and the accumulated `bench/summary.json`; finished runs are skipped when relaunched. The `x` column needs the `jobs=1` run (test 1, or an earlier `bench/j1_t1`).
+
+**To watch the CPU while it runs** (on the Docker host, after the first minute, when the `isf` stage has started):
+```bash
+for i in $(seq 1 6); do docker stats --no-stream --format "{{.Name}} CPU={{.CPUPerc}} MEM={{.MemUsage}}"; sleep 10; done
+```
+Expected: ≈ 100 % × (jobs × threads). Much less means idle or sleeping threads (wrong policy) or a CPU quota; much more means ngspice is multithreading on its own (`threads` not applied).
+
+### 5.4 Sweep of a control value (bias current, VCO tuning)
+
+For a VCO whose frequency is set by a control (e.g. the bias current of the current-starved oscillator) the `sweep` command runs the whole flow for every value and collects the result. The netlists are **not edited**: the program rewrites, in a copy, the line of the control element (same idea as `sweep` in `osc_characterization.py`), in the core **and in every block**, so the core and the mirror block always see the same value.
+
+```json
+"sweep": {
+  "values": ["250u", "500u", "750u", "1m"],
+  "line_prefix": "I0",
+  "template": "I0 VBP 0 {v}",
+  "offsets": [1e4, 1e5, 1e6, 1e7],
+  "unit": "A"
+}
+```
+```bash
+cd cases/cs_n4_gf180mcuD
+ISFPN_JOBS=16 python3 ../../isfpn.py cs_sweep.json sweep      # the console output is also saved in runs/sweep_I0_nominal/sweep.log
+```
+
+| Key | Meaning |
+|---|---|
+| `values` | control values: SPICE numbers (`"250u"`, `"1meg"`) or plain numbers |
+| `line_prefix` + `template` | the element line starting with `line_prefix` (and its `+` continuation lines) is replaced by `template` with `{v}` = the value. It must be unique in the core (error otherwise); a block that does not contain it is left unchanged (message printed) |
+| `param` | alternative: `"param": "IBIAS"` sets `.param IBIAS=<value>`; the netlists must then use `'IBIAS'` in the core and `{IBIAS}` in the blocks |
+| `offsets` | offsets Δf [Hz] at which L is reported in `sweep.csv` (default 10k, 100k, 1M, 10M) |
+| `unit` | unit of the control (`"A"`, `"V"`): used for the axis label and to express Kvco with a readable prefix (MHz/µA, MHz/mV...). Without it Kvco is in MHz per unit |
+| `corners` | optional list of PVT corners `"process:temp_C:VDD"` (e.g. `["ss:125:3.0", "typical:60:3.3", "ff:-40:3.6"]`) or `{"name","proc","temp","vdd"}`. The **whole control sweep is repeated at every corner**: the process section of the `.lib` line of the PDK preamble (or `section`), `temp`, `vdd` (and an explicit `params.VDD` / `rails.VDD`) are rewritten in a copy of the config. `typical`/`tt` are accepted for both PDKs (gf180mcuD: typical, ss, ff, fs, sf) |
+| `outdir` | output directory (default `sweep`) |
+
+**With `corners`** the layout is `runs/sweep_<variable>_<N>corners/<corner>/<control>/` (e.g. `runs/sweep_I0_3corners/ss_125C_3p0V/I0_250u/`), `sweep.csv` gets a `corner` column, Kvco and its mean slope are computed per corner, and two figures are drawn:
+- `sweep.png`: tuning curve, Kvco and L vs control, **one colour per corner** (the L panel uses a fainter shade for lower offsets);
+- `sweep_phase_noise.png`: **L(Δf) vs offset, one panel per control value and one curve per corner** (dotted line = minimum valid offset of that corner): the comparison of the phase noise at the PVT corners.
+
+Ready example: `cases/cs_n4_gf180mcuD/cs_sweep_corners.json` (4 currents × ss/125 °C/3.0 V, typical/60 °C/3.3 V, ff/−40 °C/3.6 V): `ISFPN_JOBS=16 python3 ../../isfpn.py cs_sweep_corners.json sweep`.
+
+Cost = corners × values × time of one run (3 corners × 4 currents × ~2.5 min = ~30 min with `jobs=16`). The slowest corner (ss, 125 °C, 3.0 V) at the lowest current sets the `tstop`/`settle` you need; check it first with a one-point sweep (one value, only that corner) and look at `all.log` of the point: *stable period* and *ISF closure* must be OK.
+
+Output (in `runs/sweep_I0_nominal/`, or `runs/sweep_I0_3corners/` with corners): one subdirectory per value (`I0_250u/` with its own `phase_noise.csv`, report, figures and `config.json`: **use that `phase_noise.csv` for the PLL model at that control value**), plus `sweep.csv` (f0, Kvco, minimum valid offset, L at the offsets, number of failed checks, time per point) and `sweep.png` (tuning curve and L vs control). The plot has three panels (tuning curve f0, **VCO gain Kvco**, L vs control) whose x ticks are the values exactly as written in `values` (`250u`, `500u`...). **Kvco** is the local slope df0/d(control) (central differences, one-sided at the ends; `sweep.csv` keeps it in Hz per unit, the console and the plot in MHz per prefixed unit, e.g. MHz/µA) plus the mean slope between the first and last point; it needs 3 or more points to be meaningful. For the CS (reduced test) the gain falls from 0.92 to 0.66 MHz/µA as the current grows: the tuning curve is compressive. When the real control becomes a voltage, either sweep the voltage source itself (`line_prefix` of the `Vctrl` line: Kvco comes out directly in Hz/V) or multiply this Kico by the gm of the V→I converter.
+
+Notes:
+- Points run one after another; `jobs`/`threads` apply inside each point (README 5.3). Time = number of points × time of one run (about 2.5 min per point with `jobs=16` for the CS).
+- The console output is appended automatically to `sweep.log` in the sweep folder (and each point keeps its own `all.log`); `| tee` is not needed.
+- It resumes: points with a `timing.json` are skipped when you relaunch (`ISFPN_FORCE=1` repeats them).
+- **`tstop` and `settle` must cover the slowest point** (lowest current): the oscillator starts later and has a longer period. A longer `tstop` costs nothing in the perturbed runs (they stop at the measured crossing); only the baseline pays for it. The checks of each point (stable period, ISF closure, linearity) flag a point that did not settle.
+- A ready example is `cases/cs_n4_gf180mcuD/cs_sweep.json` (4 bias currents; `tstop` 240 ns and `settle` 60 ns so that the slowest point, 250 µA, settles): `ISFPN_JOBS=16 python3 ../../isfpn.py cs_sweep.json sweep`. Expected time ~10 min with 16 jobs. Sandbox test (reduced, `n_phase=4`): f0 = 366.1 / 597.3 / 925.8 MHz for 250 µ / 500 µ / 1 mA; the mirror block followed each value (V(VCS) 1.04 / 1.22 / 1.48 V).
+- The fixed pulse charge `dq_fc` (1 fC) is a larger fraction of the oscillation charge at low current: the linearity check may flag the lowest point (it did at 250 µA: 2.0 % > 2 %). Reduce `dq_fc` (e.g. 0.5) if it does.
+- **`--set NAME=value`** (after the command, repeatable) changes one value for a single run without editing the JSON: a scalar key of the config (`tstop`, `temp`, `vdd`, `jobs`...) or, if it is not one, a `.param` (needs the netlists to use `'NAME'` / `{NAME}`): `python3 ../../isfpn.py cs.json all --set tstop=2.4e-7 --set IBIAS=300u`. It is not applied to the points of a `sweep`.
+- The control must be a current source or an element that can be written as one line. A voltage control with a V→I converter inside the circuit is not covered yet: the converter's own noise would have to go in a block (with `{VCTRL}` as a parameter).
+
+### 5.4a Target frequency: control value for a given f0
+
+`"target_f0": 500e6` in the `sweep` key (and `"target_refine": true`, the default; `false` = interpolation only):
+1. per corner, the control value that gives f0 = target by **linear interpolation** between the two bracketing sweep points (no extrapolation: if the target is outside the swept f0 range the corner is skipped with a message; widen `values`);
+2. **refinement**: a full `all` run at that value (`<corner>/target_500MHz/`, with its own `phase_noise.csv` for the PLL model) and two *baseline-only* runs at ±5 % of it (`kv_minus`, `kv_plus`, ~20 s each) that give **Kvco = Δf0/Δcontrol at the target** (`kv_sim`);
+3. report and files in the sweep folder: `target.csv` (control, f0 simulated and its error vs the target, Kvco interpolated and simulated, L interpolated and simulated, L at the buffer output when `local` is used), `sweep_target.png` (control needed per corner; L(Δf) at the target) and a star on the tuning curve of `sweep.png`.
+
+The console also prints how much the control moves across corners (min/max and ±% around typical): that is the range the bias/control circuit must cover to hold the frequency over PVT. The f0 error of the full run shows the quality of the interpolation (ring test: −0.11 %); if it matters, add sweep points near the target. Relaunching the sweep reuses the target runs if the value did not change. In `cases/cs_ls_gf180mcuD/cs_sweep*.json` the target is 500 MHz.
+
+### 5.4b Where the results go: `runs/` (names, `--tag`, `--here`)
+
+The case folder keeps only the inputs (`core.cir`, `cs.json`, block netlists); every run writes into `runs/`:
+
+| Command | Folder |
+|---|---|
+| `isfpn.py cs.json all` | `runs/<process>_<T>C_<VDD>V/` e.g. `runs/typical_60C_3p3V/` |
+| `... all --set I0=400u` | `runs/typical_60C_3p3V_I0-400u/` (every `--set` except `jobs`, `threads`, `temp`, `vdd` is added to the name) |
+| `... all --set temp=-40 --set vdd=3.6` | `runs/typical_m40C_3p6V/` (`-40` is written `m40`, `3.3` as `3p3`) |
+| `... all --tag buffer_x2` | `runs/typical_60C_3p3V_tag-buffer_x2/` (for variants the name cannot see, e.g. an edited netlist) |
+| `isfpn.py cs_sweep.json sweep` | `runs/sweep_I0_nominal/<control>/` |
+| `isfpn.py cs_sweep_corners.json sweep` | `runs/sweep_I0_3corners/<corner>/<control>/` with corners named like the `all` runs (`ss_125C_3p0V`, `ff_m40C_3p6V`) |
+
+- The process comes from the section of the `.lib <file> <section>` line of the pdk preamble (or `section`); `temp` and `vdd` from the config.
+- Each folder has a self-contained `config.json` (absolute netlist paths, `--set` values already applied) and `all.log`. To rerun a single stage there: `cd runs/<name> && python3 ../../../../isfpn.py config.json isf`.
+- The same name is the same folder: an `all` run overwrites it; a `sweep` resumes (points with `timing.json` are skipped, `ISFPN_FORCE=1` repeats them; use `--tag` if you changed the circuit).
+- `sweep` names are fixed by the variable (`line_prefix` or `param`) and `nominal` / `<N>corners`; the range of values is not in the name (it is in `sweep.csv` and in `config.json`). `"outdir"` in the `sweep` key overrides the name.
+- `--here` writes in the current directory as before (single stages always do; `tools/bench_jobs.py` uses it). The reference results of the included cases (8.x) were produced this way and are in the case folder.
+
+### 5.5 Output buffer: local ISF (additive noise floor)
+
+A buffer after the oscillator does two things. (1) It **loads** the oscillator (its input capacitance lowers f0: 663.5 → 500.6 MHz in the `cs_ls` case at 622 µA); this is automatic if the buffer is in `core.cir`. (2) Its own device noise adds jitter to the edges it produces. That jitter does **not accumulate** (the buffer has no memory of the phase), so the persistent ISF of the oscillator does not see it. The `local` key computes it and adds it to the oscillator's L.
+
+**Configuration** (`cases/cs_ls_gf180mcuD/cs.json`):
+- Keep the buffer in `core.cir`, take it out of the oscillator analysis with `skip_devices` (`nodes: "auto"` then perturbs only the oscillator nodes) and add `"local": {"nodes": ["CLK0L","CLK180L","CLK0","CLK180"]}`: the nodes of the path from the oscillator to the reference output (`ref.vec`). Devices with a drain or source on those nodes are the buffer devices (`local.devices` can be a list of names/regexes instead of `"auto"`). The symmetric path (CLK90/CLK270) has the same contribution and is not needed.
+- `n_phase` (40) points in a window `window`·T0 (0.3) before the edge, `cross`: index of the output edge that is observed, `nlate`: edges later at which the persistent part is measured.
+
+**Method.** A charge ΔQ is injected at each node at time t0 = (edge) − w. The edge shift measured right away minus the shift measured `nlate` periods later is the transient (non-persistent) part: h(w) [s/C], the local ISF. For each buffer device the noise PSD is computed at the same instants (same isolated-transistor bench as stage 4) and
+σt² = ½ Σ ∫ (h_D − h_S)² S_th dt (thermal), A = ∫ (h_D − h_S) √K dt (flicker, coherent).
+The output has two edges per period, so the white floor is **L_buf,th = 2π² f0 σt²** (flat, valid up to Δf ≈ f0) and **L_buf,fl = ½ (2π f0)² ΣA² / Δf^EF**. Powers add: L_out = L_osc + L_buf,th + L_buf,fl.
+
+**Outputs:** `local_isf.json`, `noise_local.json`, `figs/fig8_local_isf.png`, a "BUFFER OUTPUT" table in `report.txt` (σt, floor, share per device) and `phase_noise_out.csv` (columns L_osc, L_buf_thermal, L_buf_flicker, L_out_total, ...), plus a check that |h| falls to <5 % at the far end of the window (otherwise increase `window`). The accumulated oscillator noise (`phase_noise.csv`) is unchanged.
+
+**Result for the project buffer** (gf180mcuD, 622 µA, f0 = 500.56 MHz, reduced run): h ≈ 0.3–0.7 ps/fC, σt ≈ 105 fs per edge, floor −159.6 dBc/Hz; 92 % of it comes from the level shifter (XM19–XM22), about 8 % from the output inverters. The oscillator is at −105 dBc/Hz at 1 MHz and −146 dBc/Hz at 100 MHz, so the buffer floor is irrelevant for a PLL (offsets ≤ tens of MHz); it only matters if the buffer is made much weaker or the output is used at large offsets.
+
+**Sweep.** If the case has `local`, each point also writes `phase_noise_out.csv`; `sweep.csv` gets `Lout_*` columns and `sweep_phase_noise.png` draws the output as dashed lines. `cs_sweep.json` / `cs_sweep_corners.json` of this case use 250 µ, 400 µ, 622 µ, 800 µ, 1 m (f0 ≈ 500 MHz at 622 µ). They use `window` 0.5: the buffer's edge-transition time is fixed, so at high current (short T0) a window of 0.3·T0 is too short (with 1 mA it flagged `local window` at 13.9 %). Reduced sandbox test (n_phase 8, 2 cores): 250 µ → f0 255.3 MHz, σt 195 fs, floor −157.2 dBc/Hz; 1 m → f0 690.8 MHz, σt 84 fs, floor −160.2 dBc/Hz; the buffer only shows above ≈ 100 MHz offset.
+
+**Limits:** it assumes small noise (linear h), independent noise of the two edges, and the white floor only up to Δf < f0; the buffer's own input-referred noise from the oscillator side (kT/C of the loading) is part of the oscillator ISF.
 
 ## 6. Outputs and use in the PLL model
 
@@ -285,7 +501,7 @@ The first line is a comment with `f0` and `dmin`. `contributions.csv` gives the 
 Typical use in a PLL model (Python):
 ```python
 import numpy as np
-d = np.genfromtxt("phase_noise.csv", delimiter=",", skip_header=2, names=True)
+d = np.genfromtxt("phase_noise.csv", delimiter=",", skip_header=1, names=True)
 ok = d["valid"] == 1
 Sphi = lambda f: np.interp(np.log10(f), np.log10(d["offset_Hz"][ok]), np.log10(d["Sphi_rad2perHz"][ok]))   # log10 Sφ(f)
 # In a PLL with bandwidth f_bw: output noise due to the VCO = Sφ_vco(f) * |1 - H(f)|^2  (high-pass)
@@ -373,11 +589,14 @@ Independent check without Spectre: $\Gamma_{VCS}$ = 4.94 mrad/fC corresponds to 
 
 These two cases have no Spectre reference, so their validation relies on the automatic checks and on the DC sensitivity check above; the same algorithm and rules were validated against Spectre in sky130 (8.2, 8.3).
 
+### 8.6 `cs_ls_gf180mcuD` - same oscillator + level shifter and pseudo-differential inverter buffer
+See 5.5. `cd cases/cs_ls_gf180mcuD && ISFPN_JOBS=16 python3 ../../isfpn.py cs.json all`; the sweeps with `cs_sweep.json` / `cs_sweep_corners.json` and the command `sweep`.
+
 ---
 
 ## 9. Limitations and common problems
 **Limitations:** quasi-static noise; only FETs + declared blocks; ideal rails; flicker extrapolated as $K/f^{EF}$; phase noise only; L not interpretable below $\Delta f_{min}$;
-each temperature/corner implies repeating the flow; ~2 min per node (the time grows with the number of nodes and phases).
+each temperature/corner implies repeating the flow; ~2 min per node on a fast machine (the perturbed runs stop 3 periods after the measured crossing, so `tstop` only needs to cover the baseline; the time grows with the number of nodes and phases).
 
 | Symptom | Cause and solution |
 |---|---|
@@ -388,6 +607,7 @@ each temperature/corner implies repeating the flow; ~2 min per node (the time gr
 | WARNING: ... model ... not recognized as a FET | `X...` instance of a resistor/capacitor/diode: its noise is not included |
 | `ISF cycle closure` CHECK | `reltol` too large, step too large or `nper` insufficient |
 | `no crossing` / `IndexError` in `point` | `tstop` too short for `settle + (nper+13)·T0`, or the oscillator does not start (missing `.ic`) |
+| The run seems stuck at `isf Nx: closure ...` | that line is printed when node Nx **finishes**, so the slow run is the next node. Use `ISFPN_VERBOSE=1` to see each phase and its time; `run_timeout` stops a stalled run and keeps its `r_s_<node>.spice` to run by hand |
 | The run hangs | do not launch several ngspice runs at once in the sandbox; the program already runs everything serially |
 | PMOS with source on an internal node give odd results | that node is missing from `nodes` (with `"auto"` it is always included) |
 

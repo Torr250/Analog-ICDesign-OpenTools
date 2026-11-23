@@ -1,0 +1,53 @@
+{
+ "core": "core.cir",
+ "pdk": {
+  "root": "/foss/designs/atorralba/repo/Analog-ICDesign-OpenTools/ngspice/gf180mcuD",
+  "preamble": [
+   ".include {PDK}/design.ngspice",
+   ".lib {PDK}/sm141064.ngspice typical"
+  ],
+  "models": "{PDK}/sm141064.ngspice"
+ },
+ "temp": 60,
+ "vdd": 3.3,
+ "nper": 20,
+ "dq_fc": 1.0,
+ "n_phase": 30,
+ "nodes": "auto",
+ "skip_devices": [
+  "XM17",
+  "XM18",
+  "XM(19|[23][0-9]|4[0-2])"
+ ],
+ "blocks": [
+  {
+   "name": "MIRROR",
+   "node": "VCS",
+   "file": "mirror_noise.spice",
+   "out": "mirror_noise.txt",
+   "th_freq": 100000000.0
+  }
+ ],
+ "extra": [
+  ".ic v(n1)=0.6",
+  ".ic v(n2)=0.6"
+ ],
+ "ref": {
+  "vec": "v(clki)",
+  "level": 0.0,
+  "edge": "rise"
+ },
+ "tstop": 1.2e-07,
+ "tstep": "1p",
+ "settle": 3e-08,
+ "local": {
+  "nodes": [
+   "CLK0L",
+   "CLK180L",
+   "CLK0",
+   "CLK180"
+  ],
+  "n_phase": 40,
+  "window": 0.3
+ }
+}
