@@ -1,8 +1,0 @@
-{
-  "_nota": "Barrido de ibias con las condiciones del netlist (typical, 60 C, VDD del netlist)",
-  "extends": "cs_diff_base.json",
-  "command": "sweep",
-  "vdd": 3.3,
-  "jobs": 1,
-  "outdir": "results/cs_diff_nominal"
-}

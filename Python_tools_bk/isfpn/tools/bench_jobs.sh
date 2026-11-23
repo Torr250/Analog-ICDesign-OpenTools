@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# Wrapper: run from a case directory:  bash ../../tools/bench_jobs.sh cs.json [--tests 1,2,3,4,5] [--jobs 8] ...
-exec python3 "$(dirname "$0")/bench_jobs.py" "$@"
