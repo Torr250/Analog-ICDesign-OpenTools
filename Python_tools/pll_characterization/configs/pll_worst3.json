@@ -1,0 +1,25 @@
+// worst3 = ss/125C/3.0V, typical/60C/3.3V, ff/-40C/3.6V, each case with its own Kvco and charge-pump current.
+// "overrides" is keyed by the case name: <process>_<temp>C_<vdd>V.
+// Per-case keys: "params" (.param names of the netlist), "bus" (digital word, see below),
+// "edits" ({"I0": "full new line"}) and "subs" ([["old text", "new text"]]).
+{
+  "extends": "pll_base.json",
+  "command": "run",
+  "preset": ["worst3"],
+  "overrides": {
+    "ss_125C_3V":       {"params": {"KVCO": "35meg",  "ICP": "400u"}},
+    "typical_60C_3.3V": {"params": {"KVCO": "80meg",  "ICP": "160u"}},
+    "ff_-40C_3.6V":     {"params": {"KVCO": "140meg", "ICP": "90u"}}
+  },
+  // With the transistor-level VCO: the netlist defines  .param DV0=0 ... DV6=0  and the sources
+  // use them (for example  VDVCO0 dvco0 0 {DV0*VDD} ). "bus" expands a word into DV6..DV0
+  // (leftmost character = DV6; add "bus_lsb_first": true to make the leftmost one DV0):
+  //
+  // "overrides": {
+  //   "ss_125C_3V":       {"params": {"KVCO": "35meg",  "ICP": "400u"}, "bus": {"DV": "1111110"}},
+  //   "typical_60C_3.3V": {"params": {"KVCO": "80meg",  "ICP": "160u"}, "bus": {"DV": "1110000"}},
+  //   "ff_-40C_3.6V":     {"params": {"KVCO": "140meg", "ICP": "90u"},  "bus": {"DV": "1000000"}}
+  // },
+  "outdir": "results/pll_worst3",
+  "jobs": 2
+}

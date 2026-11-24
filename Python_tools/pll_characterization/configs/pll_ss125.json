@@ -1,0 +1,8 @@
+// One case: slow-slow, 125 C, 3.0 V (the netlist as it is, only the corner section is forced)
+{
+  "extends": "pll_base.json",
+  "command": "run",
+  "corner": ["ss:125:3.0"],
+  "outdir": "results/pll_ss125",
+  "jobs": 1
+}

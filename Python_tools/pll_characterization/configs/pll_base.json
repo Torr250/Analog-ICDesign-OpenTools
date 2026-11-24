@@ -1,0 +1,16 @@
+// Common settings of the PLL testbench. Paths in this file are relative to THIS file.
+// The netlist keeps the paths of the author's environment (/foss/designs/...), so no path_sub is needed there.
+// On another machine add, with ABSOLUTE paths (a relative one would be relative to this JSON file):
+//   "path_sub": {"/foss/designs/atorralba/repo/Analog-ICDesign-OpenTools/ngspice/gf180mcuD": "/your/repo/ngspice/gf180mcuD",
+//                "/foss/designs/atorralba/cyc/gf180mcuD/analog/VCO/vco_subckts": "/your/repo/Python_tools/vco_ideal"},
+{
+  "_note": "PLL 25 MHz x 20 = 500 MHz, gf180mcuD, ideal VCO, Young charge pump",
+  "netlist": "../TB_gf180_cyc_pll_pfd_cp_div.spice",
+  "clk": "v(clk)", "ref": "v(ref)", "fb": "v(fb)", "vctrl": "v(vctrl)",
+  "fref": "25meg", "n_div": 20,
+  "isupply": "i(v7)",
+  "kvco": "35meg",
+  "final_frac": 0.2,
+  "tols": [0.005, 0.001, 0.0001, 0.00001],
+  "phase_tol": 0.005
+}

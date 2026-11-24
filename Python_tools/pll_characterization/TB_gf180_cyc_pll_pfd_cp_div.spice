@@ -1,0 +1,352 @@
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/TB_gf180_cyc_pll_pfd_cp_div.sch
+**.subckt TB_gf180_cyc_pll_pfd_cp_div
+V9 net1 0 'VDD'
+V7 VDD net1 0
+x1 UPP REF VDD 0 FB UPN DNP DNN gf180_cyc_pll_pfd_tspc
+V1 REF 0 PULSE(0 {VDD} 0 {0.01/freq} {0.01/freq} {0.5/freq} {1/freq})
+x2 vctrl VDD 0 UPP net2 UPN DNP DNN vfb gf180_cyc_pll_cp_young
+I0 VDD net2 {ICP}
+R1 vctrl vfb {RZ}
+C1 vfb 0 {CZ}
+C2 vctrl 0 1p
+x3 vctrl CLK vco_ideal vdd={VDD} f0={F0} kvco={KVCO} vc0={VC0} sharp=8
+x4 0 CLK net3 VDD gf180_cyc_pll_div_divby4
+x5 0 net3 FB VDD gf180_cyc_pll_div_divby5
+**** begin user architecture code
+
+
+*.options method=gear
+.include /foss/designs/atorralba/repo/Analog-ICDesign-OpenTools/ngspice/gf180mcuD/design.ngspice
+.lib /foss/designs/atorralba/repo/Analog-ICDesign-OpenTools/ngspice/gf180mcuD/sm141064.ngspice ss
+.include /foss/designs/atorralba/cyc/gf180mcuD/analog/VCO/vco_subckts/vco_ideal_lib.spice
+.param VDD=3.0 TEMP=125 freq=25meg
+.param ICP=400u RZ=8k CZ=30p F0=500meg KVCO=35meg VC0=1.60
+.temp {TEMP}
+.csparam vdd1={VDD}
+.ic v(vctrl)=0.5
+**** interactive sim
+.control
+  tran 10p 3u uic
+  option remzerovec
+  save all
+  write TB_gf180_cyc_pll_pfd_cp_div.raw
+.endc
+
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  PLL/gf180_cyc_pll_pfd_tspc.sym # of pins=8
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_pfd_tspc.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_pfd_tspc.sch
+.subckt gf180_cyc_pll_pfd_tspc UPP A VDDA VSSA B UPN DNP DNN
+*.iopin VDDA
+*.iopin VSSA
+*.ipin A
+*.opin UPP
+*.ipin B
+*.opin UPN
+*.opin DNP
+*.opin DNN
+X1 RESET A UPN1 VDDA VSSA gf180_cyc_pll_pfd_dff_tspc
+X2 RESET B DNN1 VDDA VSSA gf180_cyc_pll_pfd_dff_tspc
+X3 UPN1 net2 VDDA VSSA DNN1 gf180_cyc_pll_pfd_nor
+X4 net2 net1 VDDA VSSA gf180_cyc_cdg_inv_x nfinv=2
+X5 net1 RESET VDDA VSSA gf180_cyc_cdg_inv_x nfinv=4
+X6 UPN1 UPP1 VDDA VSSA gf180_cyc_cdg_inv_x nfinv=2
+X8 UPN1 net6 VSSA VDDA net5 UPP1 gf180_cyc_cdg_invd_x nfinv=4 nflatch=2
+X7 DNN1 net4 VSSA VDDA net3 DNP1 gf180_cyc_cdg_invd_x nfinv=4 nflatch=2
+X9 DNN1 DNP1 VDDA VSSA gf180_cyc_cdg_inv_x nfinv=2
+X10 net5 UPP VSSA VDDA UPN net6 gf180_cyc_cdg_invd_x nfinv=8 nflatch=4
+X11 net3 DNP VSSA VDDA DNN net4 gf180_cyc_cdg_invd_x nfinv=8 nflatch=4
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_cp_young.sym # of pins=9
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_cp_young.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_cp_young.sch
+.subckt gf180_cyc_pll_cp_young vctrl VDDA VSSA UPP IBN UPN DNP DNN vfb
+*.iopin VDDA
+*.iopin VSSA
+*.ipin IBN
+*.opin vctrl
+*.ipin UPP
+*.ipin UPN
+*.ipin DNP
+*.ipin DNN
+*.ipin vfb
+XM2 vn IBN VSSA VSSA nfet_03v3 L=0.6u W=2.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=100
+XM1 vrep DNN vn VSSA nfet_03v3 L=0.28u W=3.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=30
+XM3 vctrl DNP vn VSSA nfet_03v3 L=0.28u W=3.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=30
+XM5 vrep UPP vp VDDA pfet_03v3 L=0.28u W=3.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=30
+XM7 vctrl UPN vp VDDA pfet_03v3 L=0.28u W=3.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=30
+XM4 IBN IBN VSSA VSSA nfet_03v3 L=0.6u W=2.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+XM6 vp VBP VDDA VDDA pfet_03v3 L=0.56u W=6.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=100
+XM8 vx IBN VSSA VSSA nfet_03v3 L=0.6u W=2.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+XM9 VBP VBP VDDA VDDA pfet_03v3 L=0.56u W=6.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+XM10 VBP IBN VSSA VSSA nfet_03v3 L=0.6u W=2.0u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+XM11 vx VBP VDDA VDDA pfet_03v3 L=0.56u W=6.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+x1 VDDA vctrl vrep VSSA vrep net2 gf180_cyc_pll_cp_ota5n
+x2 VDDA vctrl vrep VSSA vrep net1 gf180_cyc_pll_cp_ota5p
+I1 net1 VSSA 240u
+I2 VDDA net2 70u
+x3 VDDA vx vbp VSSA vfb net3 gf180_cyc_pll_cp_ota5n
+I4 VDDA net3 70u
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_div_divby4.sym # of pins=4
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_divby4.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_divby4.sch
+.subckt gf180_cyc_pll_div_divby4 VSSA CLK OUT VDDA
+*.iopin VDDA
+*.iopin VSSA
+*.ipin CLK
+*.opin OUT
+X1 net1 CLK net3 VDDA VSSA net2 gf180_cyc_pll_div_dff_tspc
+X2 net2 CLK net1 VDDA VSSA OUT gf180_cyc_pll_div_dff_tspc
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_div_divby5.sym # of pins=4
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_divby5.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_divby5.sch
+.subckt gf180_cyc_pll_div_divby5 VSSA CLK OUT VDDA
+*.iopin VDDA
+*.iopin VSSA
+*.ipin CLK
+*.opin OUT
+X1 X CLK net1 VDDA VSSA OUT gf180_cyc_pll_div_dff_tspc
+X2 OUT CLK net2 VDDA VSSA B gf180_cyc_pll_div_dff_tspc
+X3 B CLK net3 VDDA VSSA A gf180_cyc_pll_div_dff_tspc
+X4 A X VDDA VSSA B gf180_cyc_pll_div_nand
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_pfd_dff_tspc.sym # of pins=5
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_pfd_dff_tspc.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_pfd_dff_tspc.sch
+.subckt gf180_cyc_pll_pfd_dff_tspc RST CLK QN VDDA VSSA
+*.iopin VDDA
+*.iopin VSSA
+*.ipin CLK
+*.opin QN
+*.ipin RST
+XM1 X RST VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM2 X RST net1 VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM3 net1 CLK VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM4 net2 X VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=8
+XM6 QN X VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM5 QN CLK net2 VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=8
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_pfd_nor.sym # of pins=5
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_pfd_nor.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_pfd_nor.sch
+.subckt gf180_cyc_pll_pfd_nor A out VDDA VSSA B
+*.iopin VDDA
+*.iopin VSSA
+*.ipin A
+*.opin out
+*.ipin B
+XM1 out A VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM2 out B net1 VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM3 net1 A VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM4 out B VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM5 out A net2 VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM6 net2 B VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+.ends
+
+
+* expanding   symbol:  CDG/gf180_cyc_cdg_inv_x.sym # of pins=4
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/CDG/gf180_cyc_cdg_inv_x.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/CDG/gf180_cyc_cdg_inv_x.sch
+.subckt gf180_cyc_cdg_inv_x in out VDDA VSSA  nfinv=1
+*.ipin in
+*.iopin VDDA
+*.iopin VSSA
+*.opin out
+**** begin user architecture code
+
+
+.param nfinv=1
+
+
+**** end user architecture code
+XM1 out in VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nfinv'
+XM2 out in VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nfinv'
+.ends
+
+
+* expanding   symbol:  CDG/gf180_cyc_cdg_invd_x.sym # of pins=6
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/CDG/gf180_cyc_cdg_invd_x.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/CDG/gf180_cyc_cdg_invd_x.sch
+.subckt gf180_cyc_cdg_invd_x inp outp VSSA VDDA outn inn  nfinv=2 nflatch=1
+*.ipin inp
+*.iopin VDDA
+*.iopin VSSA
+*.opin outp
+*.ipin inn
+*.opin outn
+**** begin user architecture code
+
+
+.param nfinv=2 nflatch=1
+
+
+**** end user architecture code
+XM1 outn inp VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nfinv'
+XM2 outn inp VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nfinv'
+XM3 outp inn VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nfinv'
+XM4 outp inn VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nfinv'
+XM5 outp outn VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nflatch'
+XM6 outp outn VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nflatch'
+XM7 outn outp VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nflatch'
+XM8 outn outp VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m='nflatch'
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_cp_ota5n.sym # of pins=6
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_cp_ota5n.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_cp_ota5n.sch
+.subckt gf180_cyc_pll_cp_ota5n VDDA inp out VSSA inn IBN
+*.iopin VDDA
+*.iopin VSSA
+*.ipin inp
+*.opin out
+*.ipin inn
+*.ipin IBN
+XM2 net1 IBN VSSA VSSA nfet_03v3 L=0.56u W=3.3u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+XM1 net2 inp net1 VSSA nfet_03v3 L=0.56u W=3.3u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=10
+XM3 out inn net1 VSSA nfet_03v3 L=0.56u W=3.3u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=10
+XM5 net2 net2 VDDA VDDA pfet_03v3 L=0.56u W=1.23u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=6
+XM7 out net2 VDDA VDDA pfet_03v3 L=0.56u W=1.23u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=6
+XM4 IBN IBN VSSA VSSA nfet_03v3 L=0.56u W=3.3u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_cp_ota5p.sym # of pins=6
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_cp_ota5p.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_cp_ota5p.sch
+.subckt gf180_cyc_pll_cp_ota5p VDDA inp out VSSA inn IBP
+*.iopin VDDA
+*.iopin VSSA
+*.ipin inp
+*.opin out
+*.ipin inn
+*.ipin IBP
+XM1 net2 net2 VSSA VSSA nfet_03v3 L=0.56u W=12u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=10
+XM3 out net2 VSSA VSSA nfet_03v3 L=0.56u W=12u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=10
+XM5 net2 inp net1 VDDA pfet_03v3 L=0.56u W=2.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=10
+XM7 out inn net1 VDDA pfet_03v3 L=0.56u W=2.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=10
+XM2 net1 IBP VDDA VDDA pfet_03v3 L=0.56u W=2.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+XM4 IBP IBP VDDA VDDA pfet_03v3 L=0.56u W=2.6u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=20
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_div_dff_tspc.sym # of pins=6
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_dff_tspc.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_dff_tspc.sch
+.subckt gf180_cyc_pll_div_dff_tspc D CLK QN VDDA VSSA Q
+*.iopin VDDA
+*.iopin VSSA
+*.ipin CLK
+*.opin Q
+*.ipin D
+*.opin QN
+XM1 X D VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM2 X CLK net1 VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM3 net1 D VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM4 net2 CLK VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM6 Y CLK VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM5 Y X net2 VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM7 net3 Y VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM8 QN Y VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM9 QN CLK net3 VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM10 Q QN VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM11 Q QN VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+.ends
+
+
+* expanding   symbol:  PLL/gf180_cyc_pll_div_nand.sym # of pins=5
+** sym_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_nand.sym
+** sch_path: /foss/designs/atorralba/cyc/gf180mcuD/analog/PLL/gf180_cyc_pll_div_nand.sch
+.subckt gf180_cyc_pll_div_nand A out VDDA VSSA B
+*.iopin VDDA
+*.iopin VSSA
+*.ipin A
+*.opin out
+*.ipin B
+XM1 net1 A VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM3 out A VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM4 net2 B VSSA VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM6 out B VDDA VDDA pfet_03v3 L=0.28u W=2.4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM2 out B net1 VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+XM5 out A net2 VSSA nfet_03v3 L=0.28u W=1.1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=4
+.ends
+
+.GLOBAL VDD
+.end

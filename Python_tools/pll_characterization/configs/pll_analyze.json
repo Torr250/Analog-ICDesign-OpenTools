@@ -1,0 +1,13 @@
+// Standalone: does not need pll_base.json. Analyzes one existing .raw (no simulation).
+// raw_path is relative to THIS file; outdir is relative to where you run.
+// The signal names default to v(clk) v(ref) v(fb) v(vctrl); add "clk", "ref", "fb", "vctrl" to change them.
+{
+  "command": "analyze",
+  "raw_path": "../TB_gf180_cyc_pll_pfd_cp_div.raw",
+  "fref": "25meg",
+  "n_div": 20,
+  "vdd": 3.0,
+  "isupply": "i(v7)",
+  "kvco": "35meg",
+  "outdir": "pll_analysis"
+}
